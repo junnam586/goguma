@@ -1,0 +1,113 @@
+# goguma
+
+> A free, open-source macOS menu bar app that wakes a sleeping Mac shortly
+> before each scheduled job is due, holds sleep off while the job runs, and
+> lets the machine sleep again once it finishes. It also keeps a coding agent
+> working with the lid closed. Requires macOS 14 or later, or Linux with
+> systemd. MIT licensed.
+
+goguma does not run your jobs. Your existing scheduler still fires them —
+goguma makes sure the machine is awake when they do. A sleeping Mac does not
+queue the jobs it missed and catch up later; cron skips them outright, with no
+error written anywhere, which is why the failure usually goes unnoticed for
+weeks. (launchd is different: it re-fires a missed `StartCalendarInterval` job
+on wake, and goguma leaves those alone.)
+
+## What makes it different from caffeinate, Amphetamine and pmset
+
+- **They can only keep an awake machine awake. goguma can wake a sleeping
+  one.** It schedules real OS wakes with `pmset schedule` for jobs it found by
+  reading your existing schedulers.
+- **`pmset -a disablesleep 1` is a global switch with no owner.** It persists
+  in the power management preferences even if the process that set it is
+  killed, so nothing ever turns it back off. goguma's holds are leases that
+  expire on their own, and its privileged helper clears a stranded block after
+  60 seconds without contact.
+- **caffeinate holds sleep off only with the lid open.** Close the lid on
+  battery and the Mac sleeps through the job anyway.
+
+goguma uses `pmset` itself — `pmset -a disablesleep` and `pmset schedule`. The
+part that is not pmset is knowing what to arm, when, and when to refuse.
+
+## Where jobs come from
+
+It reads schedulers you already have: `crontab`, user and system launchd jobs,
+and Hermes. Apps that keep their own schedule store can be described to it with
+a JSON manifest. You define nothing.
+
+## Coding agents
+
+Hooks are installed automatically for Claude Code, Codex CLI, Cursor and
+Gemini CLI, so those report when they are working and the Mac stays awake until
+they stop. Any other agent or long command can be wrapped:
+`goguma run -- <command>`. The hold lasts exactly as long as that command.
+
+Agent activity cannot be detected by watching processes: an agent waiting on a
+model is blocked on a socket and looks identical to an idle one. The work is
+not local, so the harness has to say so.
+
+## Safety
+
+- Holds expire by themselves: 90 seconds for a wrapped command without renewal,
+  15 minutes for an agent session, 12 hours maximum however often renewed.
+- With the lid closed, every hold is dropped if the machine gets hot or the
+  battery falls below the cutout — the state where a machine in a bag cannot
+  show you anything is wrong.
+- It refuses to schedule a wake at all when the battery cannot afford the job,
+  because a cutout cannot un-wake a machine once the energy is spent. The
+  margin is the job's own measured drain, not a flat number.
+
+## Privacy
+
+No telemetry, no analytics, no crash reporting, no account. Jobs, history and
+settings stay in `~/Library/Application Support/goguma`. The only request it
+makes is fetching a signed advisory feed, sent with no User-Agent beyond the Go
+runtime's default, no query string and no cookies. A webhook is sent only if
+you configure one.
+
+## Security
+
+Four binaries, one of which runs as root. The privileged helper answers six
+messages and holds no policy; everything else runs unprivileged. All binaries
+are signed with a Developer ID and notarised by Apple, and setup names who
+signed the helper before asking for your password, refusing to install it if
+that signature cannot be verified.
+
+## Articles
+
+All of these in full, in one markdown file: https://getgoguma.com/llms-full.txt
+
+- [Why your Mac's cron jobs don't run while it's asleep](https://getgoguma.com/blog/cron-jobs-dont-run-mac-asleep/)
+- [How to wake a Mac for a scheduled job with pmset](https://getgoguma.com/blog/wake-mac-for-scheduled-job-pmset/)
+- [How to find which scheduled jobs your Mac has been missing](https://getgoguma.com/blog/find-missed-scheduled-jobs-mac/)
+- [launchd vs cron on macOS: which one survives sleep](https://getgoguma.com/blog/launchd-vs-cron-sleep/)
+- [caffeinate vs pmset vs Amphetamine](https://getgoguma.com/blog/caffeinate-vs-pmset-vs-amphetamine/)
+- [Why caffeinate doesn't work when you close the lid](https://getgoguma.com/blog/caffeinate-lid-closed/)
+- [Amphetamine alternatives for macOS, compared](https://getgoguma.com/blog/amphetamine-alternatives-mac/)
+- [You cannot tell whether an AI coding agent is working by watching it](https://getgoguma.com/blog/cannot-detect-ai-agent-working/)
+- [Is it safe to keep a MacBook awake with the lid closed in a bag?](https://getgoguma.com/blog/macbook-awake-in-bag-safe/)
+- [How to keep Claude Code or Codex running with the lid closed](https://getgoguma.com/blog/keep-coding-agent-running-lid-closed/)
+- [How to keep a MacBook awake with the lid closed](https://getgoguma.com/blog/keep-macbook-awake-lid-closed/)
+- [How to find out what woke your Mac](https://getgoguma.com/blog/what-woke-my-mac/)
+- [How to keep a Mac awake from the terminal until a command finishes](https://getgoguma.com/blog/keep-mac-awake-terminal-command/)
+- [pmset repeat: put your Mac's sleep and wake on a daily schedule](https://getgoguma.com/blog/pmset-repeat-wake-schedule/)
+- [Dark wake and Power Nap: when your Mac is awake but not really](https://getgoguma.com/blog/dark-wake-power-nap/)
+- [pmset disablesleep: the sleep switch with no owner](https://getgoguma.com/blog/pmset-disablesleep/)
+- [Every pmset sleep setting, explained](https://getgoguma.com/blog/pmset-sleep-settings-explained/)
+- [Why SSH sessions drop when your Mac sleeps, and what actually survives](https://getgoguma.com/blog/ssh-sessions-mac-sleep/)
+
+## Docs
+
+- [Home](https://getgoguma.com/): what it does, with a FAQ
+- [Security](https://github.com/junnam586/goguma/blob/main/SECURITY.md): what runs as root, and why
+- [Coding agents](https://github.com/junnam586/goguma/blob/main/Docs/CODING-AGENTS.md): hooks, and wrapping anything else
+- [Architecture](https://github.com/junnam586/goguma/blob/main/Docs/ARCHITECTURE.md): how the daemon, helper and CLI fit together
+- [Source](https://github.com/junnam586/goguma): MIT licensed
+- [Privacy](https://getgoguma.com/privacy/)
+- [Terms](https://getgoguma.com/terms/)
+
+## Install
+
+Download [goguma.dmg](https://github.com/junnam586/goguma/releases/latest/download/goguma.dmg),
+drag it to Applications and open it. Or `brew install junnam586/tap/goguma`
+followed by `goguma install` for the command line tools alone.

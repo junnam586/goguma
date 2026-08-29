@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pmset disablesleep: the sleep switch with no owner</title>
+<meta name="description" content="One command overrides every kind of sleep on a Mac, including the lid. It is also undocumented, global, and stays set when the thing that set it dies. How to use it without stranding it.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="pmset disablesleep: the sleep switch with no owner">
+<meta property="og:description" content="One command overrides every kind of sleep on a Mac, including the lid. It is also undocumented, global, and stays set when the thing that set it dies. How to use it without stranding it.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/pmset-disablesleep/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="pmset disablesleep: the sleep switch with no owner">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/pmset-disablesleep/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "pmset disablesleep: the sleep switch with no owner",
+ "description": "One command overrides every kind of sleep on a Mac, including the lid. It is also undocumented, global, and stays set when the thing that set it dies. How to use it without stranding it.",
+ "datePublished": "2026-08-28",
+ "dateModified": "2026-08-28",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/pmset-disablesleep/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "pmset disablesleep: the sleep switch with no owner",
+   "item": "https://getgoguma.com/blog/pmset-disablesleep/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What does pmset disablesleep do?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It sets a system-wide flag that prevents every kind of sleep, including lid-close sleep, until it is explicitly set back to 0. While set, pmset -g shows SleepDisabled 1."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is disablesleep the same as caffeinate?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No, and the difference is the whole point. caffeinate holds an assertion owned by a process \u2014 the process dies, the hold dies. disablesleep is a stored setting owned by nobody; the process that set it dying changes nothing."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I check whether disablesleep is set?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Run pmset -g and look for the SleepDisabled line: 1 means sleep is disabled."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why would anyone use it instead of caffeinate?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Because it is the only mechanism that keeps a lid-closed MacBook awake without an external display. caffeinate holds off idle sleep; the lid is not idle sleep."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>pmset disablesleep: the sleep switch with no owner</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-28</p>
+    <div class="answer"><p><code>sudo pmset -a disablesleep 1</code> stops a Mac sleeping entirely — idle timers, the lid, everything — until <code>sudo pmset -a disablesleep 0</code> sets it back. It does not appear in the settings list of <code>man pmset</code>, and unlike an assertion it is not tied to any process: kill whatever set it and the switch stays set. Anything that automates it needs a dead-man switch that clears the flag if the owner disappears.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The strongest switch, with the sharpest edge</h2>
+<pre><code>sudo pmset -a disablesleep 1</code></pre>
+<p>With that set, the machine does not sleep. Not on the idle timers, not on battery, and — the reason anyone reaches for it — <a href="../keep-macbook-awake-lid-closed/">not when the lid closes</a>. Nothing else on macOS overrides lid sleep without an external display attached. This does.</p>
+<pre><code>sudo pmset -a disablesleep 0</code></pre>
+<p>sets it back. Between those two commands, the machine's sleep is simply off, and <code>pmset -g</code> says so:</p>
+<pre><code>$ pmset -g | grep SleepDisabled
+ SleepDisabled		1</code></pre>
+<p>It is worth noticing what is *not* true of it: <code>disablesleep</code> does not appear in the settings list of <code>man pmset</code>. It works, it has worked for years, and Apple documents it nowhere on the page that documents everything else — which is a fair summary of its status. Use it knowingly.</p>
+<h2>Owned by nobody</h2>
+<p>The important contrast is with <a href="../keep-mac-awake-terminal-command/">caffeinate and its assertions</a>. An assertion is owned: a process holds it, and when that process exits — cleanly, by crash, by kill — the assertion is released and the machine can sleep. The system even lists the owner in <code>pmset -g assertions</code>.</p>
+<p><code>disablesleep</code> is not an assertion. It is a stored flag. The script that set it can crash, be killed, or simply forget, and the flag stays set. Nothing notices. Nothing times out. The machine just never sleeps again until someone works out why and sets it back — and the symptom, a Mac that quietly stops sleeping, does not point at its cause.</p>
+<p>On a desktop that is an electricity bill. On a laptop <a href="../macbook-awake-in-bag-safe/">closed in a bag</a>, it is a flat battery or a hot machine, with the screen — the only thing that could have warned you — dark.</p>
+<h2>The discipline it demands</h2>
+<p>If a human sets it by hand for an afternoon, the discipline is a reminder to set it back. If software sets it, the bar is higher, and this is exactly the design problem <a href="../caffeinate-vs-pmset-vs-amphetamine/">every tool built on this mechanism</a> has to answer:</p>
+<ul><li><strong>Pair every set with a guaranteed unset.</strong> Not "the script clears it at the end" — the script crashing *is* the case that matters. The unset has to survive the owner's death.</li><li><strong>A dead-man switch, not good intentions.</strong> Something independent of the setter should clear the flag when the setter stops confirming it is alive. goguma's answer: the privileged helper that holds the flag clears it after 60 seconds without contact from the daemon, so a crashed daemon strands nothing.</li><li><strong>Cutouts, because the screen is closed.</strong> Whatever holds a closed machine awake should release on temperature and low battery, since with the lid shut those are exactly the conditions nobody can see developing.</li></ul>
+<h2>When it is the right tool</h2>
+<p>For all its sharpness, there are exactly two situations where it is the honest answer: a lid-closed machine with no display that must keep working, and testing what your own software does when sleep genuinely cannot happen. For everything else — a script, a build, a download — <a href="../keep-mac-awake-terminal-command/">a scoped assertion</a> does the job and cleans up after itself.</p>
+<p>And like everything on this branch of the problem, it keeps an awake machine awake. A machine that is already asleep at 03:00 needs <a href="../wake-mac-for-scheduled-job-pmset/">a scheduled wake</a>, which no amount of sleep-disabling can retroactively provide.</p>
+<h2>Common questions</h2><h3>What does pmset disablesleep do?</h3><p>It sets a system-wide flag that prevents every kind of sleep, including lid-close sleep, until it is explicitly set back to 0. While set, pmset -g shows SleepDisabled 1.</p><h3>Is disablesleep the same as caffeinate?</h3><p>No, and the difference is the whole point. caffeinate holds an assertion owned by a process — the process dies, the hold dies. disablesleep is a stored setting owned by nobody; the process that set it dying changes nothing.</p><h3>How do I check whether disablesleep is set?</h3><p>Run pmset -g and look for the SleepDisabled line: 1 means sleep is disabled.</p><h3>Why would anyone use it instead of caffeinate?</h3><p>Because it is the only mechanism that keeps a lid-closed MacBook awake without an external display. caffeinate holds off idle sleep; the lid is not idle sleep.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</title>
+<meta name="description" content="cron skips a job whose time passed while the Mac was asleep — no error, no retry, no record. launchd behaves differently. Here is exactly what happens, and what to do about it.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep">
+<meta property="og:description" content="cron skips a job whose time passed while the Mac was asleep — no error, no retry, no record. launchd behaves differently. Here is exactly what happens, and what to do about it.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/cron-jobs-dont-run-mac-asleep/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/cron-jobs-dont-run-mac-asleep/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Why your Mac's cron jobs don't run while it's asleep",
+ "description": "cron skips a job whose time passed while the Mac was asleep \u2014 no error, no retry, no record. launchd behaves differently. Here is exactly what happens, and what to do about it.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/cron-jobs-dont-run-mac-asleep/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "Why your Mac's cron jobs don't run while it's asleep",
+   "item": "https://getgoguma.com/blog/cron-jobs-dont-run-mac-asleep/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Does cron catch up on jobs it missed while the Mac was asleep?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. cron evaluates its schedule against the current minute. Minutes that pass while the machine is asleep are never evaluated, so the job is skipped rather than queued, and nothing is written to any log."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does launchd catch up on missed jobs?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, for calendar-based jobs. If a StartCalendarInterval fire time passes while the Mac is asleep, launchd runs the job once when the machine next wakes. It does not run it once per missed occurrence, and it does not help if the Mac was powered off."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Will scheduling a job during the day fix it?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only if the Mac is genuinely awake and not in a low power state at that moment. A laptop with the lid closed is asleep regardless of the hour, so a lunchtime job on a machine in a bag is missed exactly like a 3am one."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I know whether a job has been missed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "With cron alone you cannot, because nothing is recorded. You have to compare each job's schedule against the machine's sleep and wake history to work out which fire times fell inside a sleep interval."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p>A sleeping Mac does not queue the cron jobs it missed and catch up on wake. It skips them outright, writes no error, and retries nothing — so the failure is silent, and most people find out weeks later. launchd is the exception: it re-fires a missed <code>StartCalendarInterval</code> job when the machine wakes.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>What actually happens</h2>
+<p>cron is a loop. It wakes roughly once a minute, compares the current time against every line in every crontab, and runs whatever matches. That design has one consequence that matters enormously on a laptop and not at all on a server: <strong>a minute that does not happen is a minute that is never evaluated.</strong></p>
+<p>When your Mac sleeps at 23:40 and wakes at 08:15, the minutes in between do not exist as far as cron is concerned. It does not later notice that <code>0 3 * * *</code> should have fired. There is no backlog, because there is no record that anything was due.</p>
+<p>The important part is what does *not* happen next:</p>
+<ul><li>Nothing fails, so nothing appears in a log</li><li>Nothing retries, because nothing knows it was missed</li><li>No mail is sent, because cron only mails you the output of jobs that actually ran</li><li>Your job's own error handling never runs, because your job never started</li></ul>
+<p>This is why the failure mode is so hard to catch. A crashed job leaves a stack trace. A job that never started leaves nothing at all. The symptom is not an error — it is the gradual realisation, weeks later, that a digest has been arriving on some days and not others.</p>
+<h2>launchd is genuinely different, and this is the part people get wrong</h2>
+<p>macOS prefers launchd, and launchd handles this case. From <code>launchd.plist(5)</code>, the man page on your own machine:</p>
+<blockquote><p>Unlike cron which skips job invocations when the computer is asleep, launchd will start the job the next time the computer wakes up. If multiple intervals transpire before the computer is woken, those events will be coalesced into one event upon wake from sleep.</p></blockquote>
+<p>So a <code>StartCalendarInterval</code> job whose fire time passed during sleep runs <strong>once</strong>, on wake. Two caveats that matter:</p>
+<ul><li><strong>Once, not once per occurrence.</strong> A job scheduled hourly that slept through nine fire times runs a single time on wake, not nine times.</li><li><strong>Only sleep, not shutdown.</strong> If the Mac was powered off, launchd has nothing to catch up from.</li></ul>
+<p>This distinction is the single most useful thing to know here, and it cuts both ways. If your job is a <code>StartCalendarInterval</code> LaunchAgent and running late is fine — an updater, a sync, an index rebuild — you already have the behaviour you want and should change nothing.</p>
+<p>If your job is in crontab, or if running eight hours late is the same as not running (a report that has to be in someone's inbox by 08:00, a backup that must finish before you leave the house), then the sleep is a real problem.</p>
+<h2>Why the usual advice doesn't fix it</h2>
+<p><strong>"Just use launchd."</strong> Good advice when late is acceptable. It does not help when the point is that the job runs *at* 03:00, and it means rewriting schedules that already work.</p>
+<p><strong>"Just schedule it during the day."</strong> This assumes your Mac is awake during the day. A closed laptop is asleep at 14:00 exactly as much as at 03:00. The lid, not the hour, is what decides.</p>
+<p><strong>"Just use caffeinate."</strong> caffeinate <a href="../keep-mac-awake-terminal-command/">stops a Mac falling asleep</a>. It cannot wake one that already is. To use it for a 03:00 job you have to prevent sleep from the moment you stop working until the job finishes — that is a full night of a machine running at desk power to do ninety seconds of work. It also <a href="../caffeinate-lid-closed/">does not survive the lid closing</a>.</p>
+<p><strong>"Just leave it plugged in."</strong> Mains power changes when a Mac sleeps, not whether. It still sleeps.</p>
+<h2>What actually works</h2>
+<p>There is only one mechanism on macOS that makes a sleeping machine wake at a chosen time, and it is <code>pmset schedule</code>. The full method — computing the wake time, arming it, holding sleep off long enough for the job to finish, and re-arming for next time — is in <a href="../wake-mac-for-scheduled-job-pmset/">how to wake a Mac for a scheduled job</a>.</p>
+<p>The short version:</p>
+<pre><code>sudo pmset schedule wake &quot;08/21/2026 02:58:30&quot;</code></pre>
+<p>That wakes the machine at 02:58:30 so a 03:00 job has a machine to run on. You then need it to stay awake long enough for the job to finish, and you need to arm the next one after it fires, because a scheduled wake is consumed when it happens.</p>
+<h2>Working out what you have already missed</h2>
+<p>You cannot ask cron, because cron kept no record. What you can do is reconstruct it: take each job's schedule, replay it against the machine's sleep and wake history, and count the fire times that fell inside a sleep interval.</p>
+<p>macOS keeps that history. <code>pmset -g log</code> includes every sleep and wake with <a href="../what-woke-my-mac/">a timestamp and a reason</a>, going back days. Replaying a cron expression against those intervals gives you the number nobody has: how many times each job has silently not run.</p>
+<p>That is what <a href="../find-missed-scheduled-jobs-mac/">finding your silently missed jobs</a> covers.</p>
+<h2>Common questions</h2><h3>Does cron catch up on jobs it missed while the Mac was asleep?</h3><p>No. cron evaluates its schedule against the current minute. Minutes that pass while the machine is asleep are never evaluated, so the job is skipped rather than queued, and nothing is written to any log.</p><h3>Does launchd catch up on missed jobs?</h3><p>Yes, for calendar-based jobs. If a StartCalendarInterval fire time passes while the Mac is asleep, launchd runs the job once when the machine next wakes. It does not run it once per missed occurrence, and it does not help if the Mac was powered off.</p><h3>Will scheduling a job during the day fix it?</h3><p>Only if the Mac is genuinely awake and not in a low power state at that moment. A laptop with the lid closed is asleep regardless of the hour, so a lunchtime job on a machine in a bag is missed exactly like a 3am one.</p><h3>How do I know whether a job has been missed?</h3><p>With cron alone you cannot, because nothing is recorded. You have to compare each job's schedule against the machine's sleep and wake history to work out which fire times fell inside a sleep interval.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a><a href="../launchd-vs-cron-sleep/">launchd vs cron on macOS — which one survives sleep</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

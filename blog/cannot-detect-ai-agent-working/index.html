@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>You cannot tell whether an AI coding agent is working by watching it</title>
+<meta name="description" content="Measured over ten seconds, the idle Claude Code session used more CPU than the one actively working. Here is the data, and why every process-watching approach to agent sleep prevention is built on sand.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="You cannot tell whether an AI coding agent is working by watching it">
+<meta property="og:description" content="Measured over ten seconds, the idle Claude Code session used more CPU than the one actively working. Here is the data, and why every process-watching approach to agent sleep prevention is built on sand.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/cannot-detect-ai-agent-working/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="You cannot tell whether an AI coding agent is working by watching it">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/cannot-detect-ai-agent-working/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "You cannot tell whether an AI coding agent is working by watching it",
+ "description": "Measured over ten seconds, the idle Claude Code session used more CPU than the one actively working. Here is the data, and why every process-watching approach to agent sleep prevention is built on sand.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/cannot-detect-ai-agent-working/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "You cannot tell whether an AI coding agent is working by watching it",
+   "item": "https://getgoguma.com/blog/cannot-detect-ai-agent-working/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Can you detect an active coding agent by CPU usage?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. In a measurement across four concurrent sessions over ten wall seconds, the busiest process by CPU was idle and the actively working process ranked third of four. The agent spends nearly all of its wall time blocked on a network socket waiting for the model, which costs almost no CPU."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can you detect it by whether the process exists?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. The process exists for the whole session whether or not anything is happening. On the machine measured, four agent processes had been alive between three and twenty-eight hours, almost all of it idle at a prompt."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can you detect it by network activity?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Not reliably. A streaming response is a trickle of bytes on a long-lived connection, indistinguishable from an editor's telemetry or a sync client. It also disappears entirely between turns, which is exactly when you still need the machine awake."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "So how should it be detected?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The harness reports it. Claude Code, Codex CLI, Cursor and Gemini CLI all run shell commands at their own lifecycle events, so they can say when a turn starts and when it ends. That is the harness stating something no external observer could work out."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>You cannot tell whether an AI coding agent is working by watching it</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p>An agent waiting on a model is a process blocked on a socket, and it looks exactly like one doing nothing. Measured across four live sessions over ten wall seconds, the <strong>idle</strong> session used 0.50s of CPU while the <strong>actively working</strong> one used 0.32s. The work is not happening on your machine, so there is nothing local to observe. The harness has to tell you.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The measurement</h2>
+<p>Four coding agent sessions were running on one machine. Their CPU consumption was sampled over ten wall seconds, and one of them was known to be mid-task — actively editing files and running tests.</p>
+<div class="tw"><table><thead><tr><th>process</th><th>CPU used over 10s</th><th>state</th></tr></thead><tbody><tr><td>32126</td><td>0.32s</td><td><strong>actively working</strong></td></tr><tr><td>34832</td><td>0.25s</td><td>idle</td></tr><tr><td>77384</td><td>0.50s</td><td>idle</td></tr><tr><td>80257</td><td>0.05s</td><td>idle</td></tr></tbody></table></div>
+<p>The working session ranked <strong>third of four</strong>. The busiest process on the list was doing nothing.</p>
+<p>This is not a measurement error or an unlucky sample. It is what the architecture predicts. An agent's work happens on somebody else's GPUs. Locally, the process spends nearly all of its wall time blocked in a <code>read</code> on a socket, waiting for tokens to come back. Blocking on a socket costs no CPU. What little the process does spend goes on parsing the stream, redrawing a terminal, and running the occasional tool — bursty, brief, and easily beaten by an idle session that happens to be repainting a spinner.</p>
+<h2>Why the other signals fail too</h2>
+<p><strong>Process presence.</strong> The obvious approach — is <code>claude</code> running? — fails because the process is there for the entire session regardless. On the machine above, the four agent processes had been alive <strong>between three and twenty-eight hours</strong>, and were idle at a prompt for nearly all of it. Treating "the binary is running" as "work is happening" means holding a laptop awake all night because someone left a tab open.</p>
+<p><strong>Network traffic.</strong> A streaming response is a slow trickle of bytes on one long-lived TLS connection. On a normal developer machine that is indistinguishable from an editor phoning home, a Dropbox sync, or a package manager checking for updates. Worse, it goes to zero *between* turns — the exact moment when a multi-step agent is about to start its next tool call and you still need the machine awake.</p>
+<p><strong>Window focus, or recent keystrokes.</strong> These measure the human, not the agent. The entire point of a long agent run is that the human has walked away.</p>
+<p><strong>Child processes.</strong> An agent running <code>npm test</code> does spawn something visible. But that is a fraction of the session, and the gaps between tool calls — waiting for the model to decide what to do next — are both invisible and precisely when sleep would kill the run.</p>
+<p>Every one of these has the same shape of failure: it either holds the machine awake when nothing is happening, or it lets the machine sleep while something is.</p>
+<h2>The consequence for tools in this space</h2>
+<p>There are now several tools that keep a Mac awake for AI agents. It is worth knowing which of the two approaches each one takes, because it determines how they behave when you walk away.</p>
+<div class="tw"><table><thead><tr><th>approach</th><th>holds awake when</th><th>releases when</th></tr></thead><tbody><tr><td>Process watching</td><td>the agent process exists</td><td>the process exits, or a CPU heuristic guesses idle</td></tr><tr><td>Lifecycle hooks</td><td>the harness reports a turn started</td><td>the harness reports it finished, or the lease expires</td></tr></tbody></table></div>
+<p>Process watching is the more permissive of the two, and permissive is the wrong direction for something whose failure mode is a laptop that never sleeps. An agent sitting idle at a prompt overnight is a live process. A tool that watches processes holds sleep off for it.</p>
+<p>That is why some of them bolt a CPU-idle heuristic on top — and the table above is exactly why that heuristic cannot work.</p>
+<h2>What the harnesses actually give you</h2>
+<p>Every major agent runs shell commands at its own lifecycle events. That is the harness telling you something no observer outside it could determine.</p>
+<div class="tw"><table><thead><tr><th>harness</th><th>config</th><th>events that mean "working"</th><th>event that means "finished"</th></tr></thead><tbody><tr><td>Claude Code</td><td><code>~/.claude/settings.json</code></td><td><code>UserPromptSubmit</code>, <code>PostToolUse</code></td><td><code>Stop</code></td></tr><tr><td>Codex CLI</td><td><code>~/.codex/hooks.json</code></td><td><code>UserPromptSubmit</code>, <code>PostToolUse</code></td><td><code>Stop</code></td></tr><tr><td>Cursor</td><td><code>~/.cursor/hooks.json</code></td><td><code>beforeSubmitPrompt</code>, <code>afterFileEdit</code></td><td><code>stop</code></td></tr><tr><td>Gemini CLI</td><td><code>~/.gemini/settings.json</code></td><td><code>BeforeAgent</code>, <code>AfterTool</code></td><td><code>AfterAgent</code>, <code>SessionEnd</code></td></tr></tbody></table></div>
+<p>Two traps in that table, both of which produce a tool that appears to work and does not.</p>
+<p><strong>The event names are not translations of each other.</strong> Gemini CLI has <code>SessionStart</code> and <code>SessionEnd</code>, which look like the obvious pair to use. They are the *process* boundaries, not the *work* boundaries — <code>SessionStart</code> fires when the CLI launches, which for a session left open at an idle prompt means holding sleep off indefinitely. <code>BeforeAgent</code> and <code>AfterAgent</code> are the per-turn events, and those are the ones that correspond to Claude Code's <code>UserPromptSubmit</code> and <code>Stop</code>.</p>
+<p><strong>The config shapes differ.</strong> Claude Code, Codex and Gemini CLI all nest as <code>hooks.&lt;Event&gt; = [{ hooks: [{type, command}] }]</code>. Cursor is flat, with a top-level <code>version: 1</code>. Writing one into the other's file produces a config the tool silently ignores — no error, no hook, and no way to tell from the outside that nothing is armed.</p>
+<h2>Hooks alone are not sufficient either</h2>
+<p>A hook says "a turn started". Nothing guarantees the matching "it finished" ever arrives. The agent can crash, be killed, hit a network failure, or have its terminal closed. If the only thing that releases the hold is a stop event, a missed stop event means a Mac that never sleeps again — which is the failure people actually fear, and the reason they don't trust these tools.</p>
+<p>The fix is that the hold has to be a <strong>lease</strong>: it expires on its own unless something keeps renewing it. Then a missed stop event costs you a bounded amount of extra wakefulness rather than an unbounded one. goguma uses 15 minutes for an agent session, with a hard ceiling of 12 hours however often it is renewed, and its privileged helper clears a stranded sleep block after 60 seconds without contact from the daemon.</p>
+<p>That last one matters more than it sounds. <code>pmset disablesleep</code> is a global setting that persists in the power management preferences — it is <strong>not</strong> cleared when the process that set it dies. Anything that sets it and is then killed leaves a Mac that cannot sleep until a human notices and runs <code>pmset</code> by hand.</p>
+<h2>The summary</h2>
+<p>You cannot observe agent work from outside the agent, because the work is not on your machine. Any tool claiming to detect it by watching is either watching process lifetime — which over-holds — or watching CPU, which the table at the top of this page shows does not distinguish the two states at all.</p>
+<p>The harness has to say so. And because the harness can fail to say so, whatever holds the machine awake has to expire by itself.</p>
+<h2>Common questions</h2><h3>Can you detect an active coding agent by CPU usage?</h3><p>No. In a measurement across four concurrent sessions over ten wall seconds, the busiest process by CPU was idle and the actively working process ranked third of four. The agent spends nearly all of its wall time blocked on a network socket waiting for the model, which costs almost no CPU.</p><h3>Can you detect it by whether the process exists?</h3><p>No. The process exists for the whole session whether or not anything is happening. On the machine measured, four agent processes had been alive between three and twenty-eight hours, almost all of it idle at a prompt.</p><h3>Can you detect it by network activity?</h3><p>Not reliably. A streaming response is a trickle of bytes on a long-lived connection, indistinguishable from an editor's telemetry or a sync client. It also disappears entirely between turns, which is exactly when you still need the machine awake.</p><h3>So how should it be detected?</h3><p>The harness reports it. Claude Code, Codex CLI, Cursor and Gemini CLI all run shell commands at their own lifecycle events, so they can say when a turn starts and when it ends. That is the harness stating something no external observer could work out.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

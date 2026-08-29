@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Every pmset sleep setting, explained</title>
+<meta name="description" content="sleep, displaysleep, standby, hibernatemode 0, 3 and 25, womp, ttyskeepawake, powernap: what each setting in pmset -g actually controls, with the defaults and the traps.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="Every pmset sleep setting, explained">
+<meta property="og:description" content="sleep, displaysleep, standby, hibernatemode 0, 3 and 25, womp, ttyskeepawake, powernap: what each setting in pmset -g actually controls, with the defaults and the traps.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/pmset-sleep-settings-explained/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Every pmset sleep setting, explained">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/pmset-sleep-settings-explained/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Every pmset sleep setting, explained",
+ "description": "sleep, displaysleep, standby, hibernatemode 0, 3 and 25, womp, ttyskeepawake, powernap: what each setting in pmset -g actually controls, with the defaults and the traps.",
+ "datePublished": "2026-08-28",
+ "dateModified": "2026-08-28",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/pmset-sleep-settings-explained/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "Every pmset sleep setting, explained",
+   "item": "https://getgoguma.com/blog/pmset-sleep-settings-explained/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What is hibernatemode 3 vs 25?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Mode 3, the laptop default, keeps memory powered during sleep and also writes a disk image as insurance: wakes are instant, and power loss costs nothing. Mode 25 writes the image and powers memory off \u2014 slower to sleep and wake, better battery, and the man page names it the setting to use if what you want is hibernation."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why do my pmset settings differ on battery and charger?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Settings exist per power source. pmset -b sets battery values, -c charger values, -a both \u2014 and defaults differ, which is why a Mac behaves differently plugged in. pmset -g shows the set currently in effect."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does womp mean in pmset?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Wake on magic packet \u2014 the same thing as Wake for network access in System Settings. With it on, a sleeping Mac can be woken over the network, and it wakes briefly on its own to keep that reachability alive."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does ttyskeepawake do?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "While any terminal session (such as an SSH login) is active, the system will not idle-sleep. A tty counts as inactive only once its idle time exceeds the system sleep timer."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>Every pmset sleep setting, explained</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-28</p>
+    <div class="answer"><p>Run <code>pmset -g</code> to see your Mac's power settings. The ones that matter: <code>sleep</code> is the idle timer for the whole system, <code>displaysleep</code> for the screen alone. <code>hibernatemode</code> picks the sleep style — 0 is memory-only (desktop default), 3 keeps memory powered plus a disk image (laptop default), 25 powers memory off and restores from disk. <code>standby</code> moves a long-sleeping laptop into that deeper state, <code>womp</code> is Wake for network access, <code>ttyskeepawake</code> keeps the Mac up while an SSH session is active, and settings can differ per power source — <code>-b</code> battery, <code>-c</code> charger, <code>-a</code> both.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>Reading your own machine</h2>
+<p>Everything below is visible in one command:</p>
+<pre><code>pmset -g</code></pre>
+<p>That prints the settings currently in effect — plus, at the top, anything currently overriding them, because assertions from running processes outrank stored settings. A <code>SleepDisabled 1</code> line, for instance, means <a href="../pmset-disablesleep/">something has switched sleep off entirely</a>.</p>
+<p>One structural fact makes sense of the rest: <strong>most settings exist twice.</strong> There is a battery set and a charger set, and they usually differ — which is the answer to a whole family of "why does it only do this unplugged?" mysteries. <code>pmset -b</code> writes the battery values, <code>-c</code> the charger values, <code>-a</code> both at once.</p>
+<h2>The timers</h2>
+<div class="tw"><table><thead><tr><th>Setting</th><th>Controls</th></tr></thead><tbody><tr><td><code>sleep</code></td><td>Minutes of idleness before the whole system sleeps. 0 disables idle sleep.</td></tr><tr><td><code>displaysleep</code></td><td>The screen alone. Almost always shorter than <code>sleep</code>.</td></tr><tr><td><code>disksleep</code></td><td>Disk spindown. Vestigial on SSDs.</td></tr></tbody></table></div>
+<p>These are *idle* timers: they answer "how long after the human stops". They are overridden by assertions — that is <a href="../keep-mac-awake-terminal-command/">how caffeinate works</a> — and they are irrelevant to the lid, which sleeps the machine <a href="../keep-macbook-awake-lid-closed/">regardless of any timer</a>.</p>
+<h2>The sleep styles: hibernatemode</h2>
+<p><code>hibernatemode</code> decides what "asleep" physically means. The man page documents three values, and warns you to use caution with all of them:</p>
+<ul><li><strong>0</strong> — sleep is memory-only. Nothing written to disk; wake is instant; power loss loses the session. The desktop default.</li><li><strong>3</strong> — memory stays powered *and* a copy is written to disk. Wake is instant from memory, and if power fails, the machine restores from the image instead of losing everything. The laptop default.</li><li><strong>25</strong> — the image is written and memory is powered off. Slower to sleep, slower to wake, and the best battery of the three. In the man page's own words: if you want hibernation, this is the setting.</li></ul>
+<p>Adjacent to it, <code>standby</code>: with it on, a laptop that has been asleep for a while writes the image and drops into the deeper state anyway — mode 3 sleep that matures into mode 25. The delay is governed by <code>standbydelayhigh</code> and <code>standbydelaylow</code>, split by whether the battery is above or below <code>highstandbythreshold</code> (default 50%). This is why <a href="../what-woke-my-mac/">a wake in the log can say "Wake from Hibernate"</a> on a machine nominally in mode 3 — it slept long enough to graduate. To never write images at all, the man page's recipe is <code>hibernatemode</code>, <code>standby</code>, and <code>autopoweroff</code> all 0.</p>
+<h2>The network and terminal settings</h2>
+<ul><li><strong><code>womp</code></strong> — wake on magic packet; the "Wake for network access" checkbox. A sleeping Mac stays reachable, at the cost of brief <a href="../dark-wake-power-nap/">dark wakes</a> to maintain its network presence.</li><li><strong><code>powernap</code></strong> — permits background work (mail, backups) during those display-off wakes on supported machines.</li><li><strong><code>ttyskeepawake</code></strong> — while a terminal session is active, no idle sleep. This is why a Mac someone is SSH'd into stays up — and the fine print is that a tty only counts as inactive once its idle time exceeds the sleep timer. <a href="../ssh-sessions-mac-sleep/">More on SSH and sleep</a>.</li></ul>
+<h2>What none of these do</h2>
+<p>Settings shape when the machine sleeps and how deeply. No setting here wakes it at a time of your choosing — that is a different mechanism, <a href="../wake-mac-for-scheduled-job-pmset/"><code>pmset schedule</code></a> for one-shots and <a href="../pmset-repeat-wake-schedule/"><code>pmset repeat</code></a> for routines. And no timer value rescues <a href="../cron-jobs-dont-run-mac-asleep/">a cron job whose moment passed during sleep</a>; by the time the machine is back, the minute is gone.</p>
+<h2>Common questions</h2><h3>What is hibernatemode 3 vs 25?</h3><p>Mode 3, the laptop default, keeps memory powered during sleep and also writes a disk image as insurance: wakes are instant, and power loss costs nothing. Mode 25 writes the image and powers memory off — slower to sleep and wake, better battery, and the man page names it the setting to use if what you want is hibernation.</p><h3>Why do my pmset settings differ on battery and charger?</h3><p>Settings exist per power source. pmset -b sets battery values, -c charger values, -a both — and defaults differ, which is why a Mac behaves differently plugged in. pmset -g shows the set currently in effect.</p><h3>What does womp mean in pmset?</h3><p>Wake on magic packet — the same thing as Wake for network access in System Settings. With it on, a sleeping Mac can be woken over the network, and it wakes briefly on its own to keep that reachability alive.</p><h3>What does ttyskeepawake do?</h3><p>While any terminal session (such as an SSH login) is active, the system will not idle-sleep. A tty counts as inactive only once its idle time exceeds the system sleep timer.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

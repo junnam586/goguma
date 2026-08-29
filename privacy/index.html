@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>goguma · privacy</title>
+<meta name="description" content="What goguma reads, what it stores, and the one request it ever makes.">
+<link rel="icon" href="../assets/potato.png">
+<meta property="og:title" content="goguma · privacy">
+<meta property="og:description" content="What goguma reads, what it stores, and the one request it ever makes.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/privacy/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="goguma · privacy">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/privacy/">
+<style>
+/*
+A document page, not a landing page. The tokens, the type scale and the footer
+are the site's; the measure is not. Prose wants ~68 characters a line, and the
+1180px grid the landing page uses would set this at twice that.
+*/
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  min-height:100vh;display:flex;flex-direction:column;
+}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+
+h1,h2{margin:0;letter-spacing:-.035em;line-height:1.04;font-weight:600}
+h1{font-size:clamp(34px,5.1vw,52px)}
+h2{font-size:clamp(19px,2.1vw,23px);letter-spacing:-.028em;line-height:1.2;
+   margin:clamp(38px,5vh,52px) 0 0}
+p{margin:14px 0 0;font-size:16px;line-height:1.62;color:var(--ink-2)}
+p strong{color:var(--ink);font-weight:600}
+ul{margin:14px 0 0;padding-left:20px}
+li{font-size:16px;line-height:1.62;color:var(--ink-2);margin:7px 0 0}
+code{
+  overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink);
+}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+
+/* The wordmark is the way back, on its own margin near the corner. */
+.top{max-width:none;padding:14px 28px 0}
+.home{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:23px;font-weight:600;letter-spacing:-.022em;
+  color:var(--ink);text-decoration:none;transition:opacity .18s;
+}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+
+.head{padding-top:clamp(34px,7vh,72px)}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+
+/* The summary sits above the detail and says the whole thing once, because
+   most people read a privacy page to answer one question and leave.
+
+   Set on the ground, not in a card. DESIGN.md is explicit: no cards, no
+   borders, sections separated by whitespace and hairline rules and nothing
+   else. It was a white panel with a border and a 14px radius, which is the
+   one shape this site does not have. */
+.summary{
+  margin:clamp(26px,4vh,38px) 0 0;
+  padding-bottom:clamp(26px,4vh,38px);
+  border-bottom:1px solid var(--rule);
+}
+.summary p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,20px);
+  line-height:1.5;letter-spacing:-.012em}
+.summary p + p{margin-top:12px}
+
+.body{padding-bottom:clamp(30px,6vh,64px)}
+
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;
+  font-size:13px;color:rgba(36,26,44,.66);background:none}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-links a:hover{color:rgba(36,26,44,.85);border-bottom-color:currentColor}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../"><img src="../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+
+  <div class="wrap head">
+    <h1>Privacy</h1>
+    <p class="stamp">Last updated 20 August 2026</p>
+
+    <div class="summary">
+      <p><strong>goguma has no telemetry, no analytics and no crash reporting.</strong>
+        Your jobs, your history and your settings never leave your machine.</p>
+      <p>The only address it collects is the one you type into the mailing list,
+        and only if you choose to.</p>
+    </div>
+  </div>
+
+  <div class="wrap body">
+
+    <h2>What the app reads</h2>
+    <p>To know when to wake your machine, goguma reads the schedulers you already
+      have: your <code>crontab</code>, your user and system launchd jobs, Hermes's
+      schedule store, and any app you have described to it with a manifest.</p>
+    <p>From those it keeps the job's name, its schedule, the command it runs, and
+      a history of how long each run took and what it cost in battery. All of it
+      is stored on your machine, in
+      <code>~/Library/Application&nbsp;Support/goguma</code>. None of it is sent
+      anywhere.</p>
+
+    <h2>What leaves your machine</h2>
+    <p>Two things can, and both are listed here in full.</p>
+    <ul>
+      <li><strong>The advisory feed.</strong> goguma fetches a signed list of known
+        security advisories from <code>getgoguma.com/advisories.json</code> so it
+        can tell you when the version you are running has a problem. It is a plain
+        GET with no User-Agent beyond the Go runtime's default, no query string
+        and no cookies — it carries nothing that identifies you or your machine.</li>
+      <li><strong>A webhook, only if you set one.</strong> If you configure a
+        <code>webhook_url</code>, goguma posts job events to it. You choose the
+        address and what it does with them. Configure nothing and nothing is sent.</li>
+    </ul>
+    <p>There is no other outbound request. No usage statistics, no error reports,
+      no check-in, no account.</p>
+
+    <h2>What the app never touches</h2>
+    <p>goguma does not read your clipboard, your documents, your browser, your
+      keystrokes or your network traffic. It reads schedulers, and it asks the
+      operating system about power: battery level, whether you are on mains, the
+      lid, and the temperature. That is the whole surface.</p>
+
+    <h2>This website</h2>
+    <p>getgoguma.com loads no analytics, sets no cookies, and includes no
+      third-party scripts. There is nothing here to opt out of.</p>
+    <p>The site is served by GitHub Pages, which keeps its own server logs of
+      requests — including IP addresses — under
+      <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's
+      privacy statement</a>. Those logs are GitHub's and we neither see them nor
+      control them. The same is true of the release downloads, which are served
+      from GitHub, and of Homebrew installs.</p>
+
+    <h2>The mailing list</h2>
+    <p>If you give us your email address on the
+      <a href="../updates/">updates page</a>, it is stored by
+      <a href="https://buttondown.com/legal/privacy">Buttondown</a>, our email
+      provider, and used for one thing: telling you when a bug is found in goguma
+      and when it is fixed.</p>
+    <p>We ask for nothing but the address. It is never sold, rented or shared, and
+      every email carries an unsubscribe link that removes you immediately. You can
+      also ask us to delete it and we will.</p>
+
+    <h2>Verifying any of this</h2>
+    <p>goguma is open source under the MIT licence, so none of the above has to be
+      taken on trust. Every network call in the codebase is in
+      <a href="https://github.com/junnam586/goguma/blob/main/internal/advisory/advisory.go">internal/advisory</a>
+      and <a href="https://github.com/junnam586/goguma/blob/main/internal/daemon/webhook.go">internal/daemon/webhook.go</a>,
+      and <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">SECURITY.md</a>
+      describes what runs with privilege and why.</p>
+
+    <h2>Changes, and getting in touch</h2>
+    <p>If this policy changes, the date at the top changes with it, and the edit is
+      in the repository's history like everything else.</p>
+    <p>Questions, corrections, or a request to delete your address: open an issue
+      at <a href="https://github.com/junnam586/goguma/issues">github.com/junnam586/goguma/issues</a>.</p>
+
+  </div>
+</div>
+
+<footer>
+  <p class="foot-links">
+    <a href="../">goguma</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/releases">Releases</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../blog/">Writing</a> ·
+    <a href="../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+
+</body>
+</html>

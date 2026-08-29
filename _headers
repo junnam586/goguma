@@ -1,0 +1,56 @@
+# Cache policy. Read by Netlify and Cloudflare Pages; Vercel reads vercel.json
+# instead, which says the same thing.
+#
+# GitHub Pages serves everything with a fixed `cache-control: max-age=600` and
+# offers no way to change it, so a repeat visitor re-fetches every asset after
+# ten minutes forever. That is the one thing worth moving host for, and this
+# file is the reason.
+#
+# ── Why not `immutable` with a one-year max-age ──────────────────────────────
+# Because the assets here have plain names: potato.webp, sky.webp. `immutable`
+# tells the browser never to revalidate, which is only safe when the filename
+# changes whenever the bytes do. Set it here and a corrected image would sit
+# stale in people's caches for a year with no way to reach them.
+#
+# The correct fix is content-hashed filenames at publish time, after which
+# `immutable` becomes both safe and free. Until then: a day of hard cache, then
+# a month during which the browser serves the stale copy instantly and
+# revalidates behind the scenes. 144x better than 600 seconds, and a mistake
+# self-corrects within a day rather than a year.
+
+/assets/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=2592000
+
+# The pages themselves are cheap and change with every deploy, so they
+# revalidate against the etag rather than being held.
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+# The advisory feed is fetched by every installed copy of goguma to learn about
+# security problems. A long cache here would delay the one message that must
+# not be delayed, so it stays short deliberately.
+/advisories.json
+  Cache-Control: public, max-age=300
+  Access-Control-Allow-Origin: *
+
+# Crawler-facing files: fresh enough that a new article is found quickly.
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+/feed.xml
+  Cache-Control: public, max-age=3600
+  Content-Type: application/atom+xml; charset=utf-8
+/robots.txt
+  Cache-Control: public, max-age=3600
+/llms.txt
+  Cache-Control: public, max-age=3600
+  Content-Type: text/plain; charset=utf-8
+
+# Headers GitHub Pages does not set either. Nothing here embeds anyone or is
+# embedded, and there is no form to protect, so these are the plain defaults
+# rather than a policy anyone has to maintain.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

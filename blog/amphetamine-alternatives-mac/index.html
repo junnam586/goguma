@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Amphetamine alternatives for macOS, compared honestly</title>
+<meta name="description" content="Every keep-awake app for the Mac, what each actually does with the lid closed, and the question that separates them — what happens when you forget to turn it off.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="Amphetamine alternatives for macOS, compared honestly">
+<meta property="og:description" content="Every keep-awake app for the Mac, what each actually does with the lid closed, and the question that separates them — what happens when you forget to turn it off.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/amphetamine-alternatives-mac/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Amphetamine alternatives for macOS, compared honestly">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/amphetamine-alternatives-mac/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Amphetamine alternatives for macOS, compared honestly",
+ "description": "Every keep-awake app for the Mac, what each actually does with the lid closed, and the question that separates them \u2014 what happens when you forget to turn it off.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/amphetamine-alternatives-mac/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "Amphetamine alternatives for macOS, compared honestly",
+   "item": "https://getgoguma.com/blog/amphetamine-alternatives-mac/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What is the best free alternative to Amphetamine?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "KeepingYouAwake and Caffeine are the closest like-for-like free menu bar toggles. If you specifically need lid-closed with no external display, Clamshell and Adrafinil target that case; if you want the hold scoped to an agent session rather than left on, Adrafinil and goguma both do that."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which keep-awake apps work with the lid closed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only ones that use pmset disablesleep underneath. Tools built purely on power assertions, which is most of the classic menu bar toggles, cannot hold a closed lid with no external display, because the assertion does not cover the clamshell sleep path."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is Amphetamine still maintained?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, and it remains the most feature-complete of the toggles, with app, drive and audio triggers plus session timers. Its shape is a manual switch, so the usual complaint is forgetting to turn it off."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which one wakes a sleeping Mac for a scheduled job?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "None of the keep-awake apps do \u2014 that needs pmset schedule, a different mechanism. goguma is built around that case rather than around the toggle."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do any of them have safety cutoffs?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Wide Awake, Adrafinil and goguma each release the hold on thermal or battery conditions. Most of the simpler toggles do not, which matters mainly for lid-closed use where you cannot see anything is wrong."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>Amphetamine alternatives for macOS, compared honestly</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p>The free options worth knowing are <strong>Caffeine</strong>, <strong>KeepingYouAwake</strong>, <strong>Clapet</strong>, <strong>Wide Awake</strong>, <strong>Clamshell</strong> and <strong>Adrafinil</strong>. The two questions that actually separate them: does it hold a <strong>closed lid</strong> with no external display, and does it <strong>release by itself</strong>? Most hold an awake Mac awake and wait to be switched off. None of them, Amphetamine included, can wake a Mac that is already asleep.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The two questions that matter</h2>
+<p>Feature lists in this category all look similar. Two things actually separate the tools:</p>
+<p><strong>Does it hold a closed lid?</strong> With no external display and no mains power. Tools built on power assertions — the classic menu bar toggles — cannot, because <a href="../caffeinate-lid-closed/">an assertion does not cover the clamshell sleep path</a>. Only tools that reach for <a href="../pmset-disablesleep/"><code>pmset disablesleep</code></a> manage it.</p>
+<p><strong>Does it release by itself?</strong> A toggle you have to remember to switch off has one predictable failure: a laptop that arrives somewhere flat and warm. Everything else is preference.</p>
+<h2>The comparison</h2>
+<div class="tw"><table><thead><tr><th></th><th>free</th><th>closed lid</th><th>releases by itself</th><th>safety cutoffs</th><th>wakes a sleeping Mac</th></tr></thead><tbody><tr><td><strong>Amphetamine</strong></td><td>yes</td><td>yes</td><td>timers and triggers</td><td>no</td><td>no</td></tr><tr><td><strong>Caffeine</strong></td><td>yes</td><td>no</td><td>no</td><td>no</td><td>no</td></tr><tr><td><strong>KeepingYouAwake</strong></td><td>yes</td><td>no</td><td>optional timer</td><td>no</td><td>no</td></tr><tr><td><strong>Clapet</strong></td><td>yes</td><td>yes</td><td>on lid open</td><td>no</td><td>no</td></tr><tr><td><strong>Wide Awake</strong></td><td>yes</td><td>yes</td><td>no</td><td><strong>thermal, battery</strong></td><td>no</td></tr><tr><td><strong>Clamshell</strong></td><td>freemium</td><td><strong>yes, its whole point</strong></td><td>no</td><td>no</td><td>no</td></tr><tr><td><strong>Adrafinil</strong></td><td>yes, MIT</td><td>yes</td><td><strong>on agent activity</strong></td><td>thermal, battery</td><td>no</td></tr><tr><td><strong>goguma</strong></td><td>yes, MIT</td><td>yes</td><td><strong>on job or agent activity</strong></td><td>thermal, battery</td><td><strong>yes</strong></td></tr><tr><td><code>caffeinate</code></td><td>built in</td><td>no</td><td>yes, with the command</td><td>no</td><td>no</td></tr></tbody></table></div>
+<h2>The classic toggles</h2>
+<p><strong>Amphetamine</strong> is the most feature-complete and still the default recommendation for good reason: app-launch triggers, drive-based triggers, audio-activity triggers, session timers, per-session control. If you want "stay awake whenever Logic is open", nothing else matches it. Free, and the trigger system genuinely reduces how often you have to remember.</p>
+<p><strong>Caffeine</strong> is the original and the simplest: one toggle, nothing else. It is assertion-based, so it does not hold a closed lid.</p>
+<p><strong>KeepingYouAwake</strong> is Caffeine with a timer and an active project. Same assertion limit.</p>
+<p><strong>Clapet</strong> is narrower and cleverer — it targets the lid specifically, keeping the Mac awake when you close it and letting it sleep when you open it again. Worth knowing if lid behaviour is the only thing you want to change.</p>
+<h2>The lid-closed specialists</h2>
+<p><strong>Clamshell</strong> exists for one job: keeping an Apple silicon MacBook awake with the lid shut and <strong>no external display</strong>, removing the dummy-plug requirement. If that is your entire problem, it is the most direct answer on the list.</p>
+<p><strong>Wide Awake</strong> is notable for shipping a thermal and battery cutoff — it turns itself off before overheating. In a category where most tools will happily cook a laptop in a bag, that is a real distinction and it deserves more credit than it usually gets.</p>
+<h2>The agent-aware ones</h2>
+<p>A newer group scopes the hold to *work happening* rather than a switch being on.</p>
+<p><strong>Adrafinil</strong> (MIT, open source) detects agent activity through hooks it installs into Claude Code, Codex and others, holds sleep off with <code>pmset disablesleep</code> while they work, and releases when they stop. It has thermal and battery cutoffs and a chime when you close the lid. Its team also published the on-device finding that the private <code>setClamShellSleepDisable</code> API does not actually hold a displayless closed lid on macOS 26.3 — a genuinely useful negative result that saved everyone else the experiment.</p>
+<p><strong>goguma</strong> (MIT, open source) overlaps on the agent half — hooks for Claude Code, Codex CLI, Cursor and Gemini CLI — but is built around a different problem: waking a Mac that is already asleep, for scheduled jobs it finds on your machine. Holds are leases that expire on their own rather than waiting to be released, and its privileged helper clears a stranded sleep block after 60 seconds without contact, because <a href="../caffeinate-vs-pmset-vs-amphetamine/"><code>disablesleep</code> persists after the process that set it dies</a>.</p>
+<h2>The thing none of them do</h2>
+<p>Every tool above answers "stop my Mac sleeping". A large share of the people searching for them actually have the opposite problem: <strong>the Mac was already asleep when something was due.</strong></p>
+<p>For that, keeping it awake is the wrong shape — you would run a laptop at desk power all night to do ninety seconds of work at 03:00. What you want is a machine that wakes for the job and sleeps again afterwards, which needs <a href="../wake-mac-for-scheduled-job-pmset/"><code>pmset schedule</code></a> rather than any assertion or toggle.</p>
+<p>That is the gap goguma is built for, and it is why it is on this list without really being in this category.</p>
+<h2>Choosing</h2>
+<ul><li><strong>A toggle with good triggers</strong> → Amphetamine, still.</li><li><strong>Simplest possible toggle</strong> → KeepingYouAwake.</li><li><strong>Only care about lid behaviour</strong> → Clapet, or Clamshell for the no-display case.</li><li><strong>Want a safety cutoff</strong> → Wide Awake, Adrafinil or goguma.</li><li><strong>Keeping a coding agent alive with the lid shut</strong> → Adrafinil or goguma; both scope the hold to the work.</li><li><strong>A scheduled job that fires while the Mac is asleep</strong> → none of the toggles. You need a wake.</li><li><strong>Wrapping one command with the lid open</strong> → <code>caffeinate -s</code>, already installed.</li></ul>
+<h2>Common questions</h2><h3>What is the best free alternative to Amphetamine?</h3><p>KeepingYouAwake and Caffeine are the closest like-for-like free menu bar toggles. If you specifically need lid-closed with no external display, Clamshell and Adrafinil target that case; if you want the hold scoped to an agent session rather than left on, Adrafinil and goguma both do that.</p><h3>Which keep-awake apps work with the lid closed?</h3><p>Only ones that use pmset disablesleep underneath. Tools built purely on power assertions, which is most of the classic menu bar toggles, cannot hold a closed lid with no external display, because the assertion does not cover the clamshell sleep path.</p><h3>Is Amphetamine still maintained?</h3><p>Yes, and it remains the most feature-complete of the toggles, with app, drive and audio triggers plus session timers. Its shape is a manual switch, so the usual complaint is forgetting to turn it off.</p><h3>Which one wakes a sleeping Mac for a scheduled job?</h3><p>None of the keep-awake apps do — that needs pmset schedule, a different mechanism. goguma is built around that case rather than around the toggle.</p><h3>Do any of them have safety cutoffs?</h3><p>Wide Awake, Adrafinil and goguma each release the hold on thermal or battery conditions. Most of the simpler toggles do not, which matters mainly for lid-closed use where you cannot see anything is wrong.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

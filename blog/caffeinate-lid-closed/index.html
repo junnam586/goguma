@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why caffeinate doesn&#x27;t work when you close the lid</title>
+<meta name="description" content="caffeinate asserts against idle sleep. Closing the lid is a different sleep path entirely, which is why your job dies the moment the MacBook shuts — and what actually holds it.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="Why caffeinate doesn&#x27;t work when you close the lid">
+<meta property="og:description" content="caffeinate asserts against idle sleep. Closing the lid is a different sleep path entirely, which is why your job dies the moment the MacBook shuts — and what actually holds it.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/caffeinate-lid-closed/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why caffeinate doesn&#x27;t work when you close the lid">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/caffeinate-lid-closed/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Why caffeinate doesn't work when you close the lid",
+ "description": "caffeinate asserts against idle sleep. Closing the lid is a different sleep path entirely, which is why your job dies the moment the MacBook shuts \u2014 and what actually holds it.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/caffeinate-lid-closed/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "Why caffeinate doesn't work when you close the lid",
+   "item": "https://getgoguma.com/blog/caffeinate-lid-closed/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Does caffeinate work with the lid closed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No, not on a MacBook with no external display. caffeinate prevents idle sleep, and closing the lid takes a different path. With an external display and mains power the Mac enters clamshell mode and stays awake, but that is the display and power doing it, not caffeinate."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What does hold a MacBook awake with the lid closed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "sudo pmset -a disablesleep 1 is the only supported mechanism. It is global and it persists after the process that set it dies, so it needs to be set back to 0 explicitly."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does caffeinate -d help?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. -d prevents the display sleeping, which is a narrower assertion, not a broader one. None of caffeinate's flags reach the clamshell path."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Will a dummy HDMI plug work?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Often yes \u2014 it makes macOS believe an external display is attached, which enables clamshell mode. It is a hardware workaround for a software problem, and it requires mains power on most models."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Do private APIs like setClamShellSleepDisable work?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. Verified on-device on macOS 26.3, the private RootDomainUserClient selector 12 returns success but the Mac still sleeps \u2014 it governs the external-display clamshell path, not lid close with no display."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>Why caffeinate doesn&#x27;t work when you close the lid</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p><code>caffeinate</code> creates a power assertion against <strong>idle</strong> sleep. Closing the lid triggers clamshell sleep, a separate and lower-level path that the assertion does not cover, so a MacBook with no external display and no mains power sleeps anyway. The only mechanism that holds a closed lid awake is <code>pmset -a disablesleep 1</code>.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>Two different sleeps</h2>
+<p>macOS does not have one sleep. The two that matter here are:</p>
+<p><strong>Idle sleep.</strong> Nothing has happened for a while, so the machine powers down. This is what the Energy Saver timeout controls, and it is what power assertions are for. <code>caffeinate</code> takes an assertion — <code>PreventUserIdleSystemSleep</code> — that tells the kernel "not yet, something is happening".</p>
+<p><strong>Clamshell sleep.</strong> The lid closed. This is not a timeout being reached; it is a hardware event with its own handling, and on a laptop it is meant to be unconditional. A machine you put in a bag should sleep.</p>
+<p><code>caffeinate</code> speaks to the first one. It has nothing to say about the second. When you close the lid, the assertion is still perfectly valid and perfectly held — and the machine sleeps anyway, because it was never the thing being asked.</p>
+<p>This is why the failure feels like a bug. The tool is working. The scope is just narrower than the name suggests.</p>
+<h2>The exception that confuses everyone</h2>
+<p>Close the lid on a MacBook that has an external display and mains power attached and it stays awake. That is <strong>clamshell mode</strong>, and it is macOS deciding the lid is irrelevant because you are clearly using the machine at a desk.</p>
+<p>People then conclude that closing the lid is fine and caffeinate is holding it. Unplug at a café and the same setup dies within seconds. The display and the power adapter were doing the work.</p>
+<p>The conditions vary by model, but the general shape on Apple silicon is: external display <strong>and</strong> mains power. Battery alone, with no display, sleeps — <a href="../keep-macbook-awake-lid-closed/">the ways around that are their own subject</a>.</p>
+<h2>What actually holds it</h2>
+<p>One supported mechanism:</p>
+<pre><code>sudo pmset -a disablesleep 1</code></pre>
+<p>This does hold a closed lid awake on battery with no display. It is also global, unscoped, and — the part that matters — <strong>persistent</strong>. It is written into the power management preferences and is not cleared when whatever set it exits. Kill the script before its cleanup line and the Mac cannot sleep again until someone works out why.</p>
+<p>So anything using it responsibly needs three things: it should be set only while work is actually happening, it should be released the moment the work ends, and something independent should clear it if the thing that set it disappears.</p>
+<h2>The routes that don't work, tested</h2>
+<p>It is worth recording the dead ends, because they look plausible and cost a day each.</p>
+<p><strong>Private in-process APIs.</strong> There is a private <code>RootDomainUserClient</code> selector 12, <code>setClamShellSleepDisable</code>, which reads like exactly the right thing. Verified on-device on <strong>macOS 26.3</strong>: it returns success and the Mac still sleeps. It governs the external-display clamshell path, not lid close with no display attached. This finding is <a href="https://github.com/kageroumado">Adrafinil's</a>, whose team tested it and published the result; goguma cites it in its own source rather than repeating the experiment.</p>
+<p><strong>More caffeinate flags.</strong> <code>-d</code> (display), <code>-i</code> (idle), <code>-m</code> (disk), <code>-u</code> (user active). All of these are narrower assertions, not broader ones. None reaches the clamshell path.</p>
+<p><strong>IOKit assertions directly.</strong> <code>IOPMAssertionCreateWithName</code> with <code>kIOPMAssertionTypePreventUserIdleSystemSleep</code> is what caffeinate itself uses. Calling it yourself gets you caffeinate's behaviour, including its limit.</p>
+<p><strong>A dummy HDMI plug.</strong> This genuinely works — it makes macOS believe a display is attached, enabling clamshell mode. It is a hardware fix for a software problem, needs mains power on most models, and does not travel well in a bag.</p>
+<h2>The thing to be careful about</h2>
+<p>A closed MacBook that cannot sleep is a sealed aluminium box with no airflow, and you cannot see that anything is wrong. That is genuinely the dangerous configuration, and it is worth reading <a href="../macbook-awake-in-bag-safe/">is it safe to keep a MacBook awake in a bag</a> before leaving one running.</p>
+<p>The short version: whatever holds the lid awake should drop the hold if the machine gets hot or the battery falls, and it should only ever be held while work is actually happening.</p>
+<h2>If the real problem is a scheduled job</h2>
+<p>If you came here because a job did not run overnight, holding sleep off is the wrong tool even once it works. You would be running a laptop all night to do a minute of work at 03:00. What you want is a machine that <a href="../wake-mac-for-scheduled-job-pmset/">wakes for the job and sleeps again afterwards</a> — a different mechanism, and one none of the keep-awake tools offer.</p>
+<h2>Common questions</h2><h3>Does caffeinate work with the lid closed?</h3><p>No, not on a MacBook with no external display. caffeinate prevents idle sleep, and closing the lid takes a different path. With an external display and mains power the Mac enters clamshell mode and stays awake, but that is the display and power doing it, not caffeinate.</p><h3>What does hold a MacBook awake with the lid closed?</h3><p>sudo pmset -a disablesleep 1 is the only supported mechanism. It is global and it persists after the process that set it dies, so it needs to be set back to 0 explicitly.</p><h3>Does caffeinate -d help?</h3><p>No. -d prevents the display sleeping, which is a narrower assertion, not a broader one. None of caffeinate's flags reach the clamshell path.</p><h3>Will a dummy HDMI plug work?</h3><p>Often yes — it makes macOS believe an external display is attached, which enables clamshell mode. It is a hardware workaround for a software problem, and it requires mains power on most models.</p><h3>Do private APIs like setClamShellSleepDisable work?</h3><p>No. Verified on-device on macOS 26.3, the private RootDomainUserClient selector 12 returns success but the Mac still sleeps — it governs the external-display clamshell path, not lid close with no display.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

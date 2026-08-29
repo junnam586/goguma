@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to keep a MacBook awake with the lid closed</title>
+<meta name="description" content="Closing the lid sleeps a MacBook regardless of every timer and every keep-awake app. Here is the one supported way, the one mechanism that works without a display, and what each costs.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="How to keep a MacBook awake with the lid closed">
+<meta property="og:description" content="Closing the lid sleeps a MacBook regardless of every timer and every keep-awake app. Here is the one supported way, the one mechanism that works without a display, and what each costs.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/keep-macbook-awake-lid-closed/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to keep a MacBook awake with the lid closed">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/keep-macbook-awake-lid-closed/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "How to keep a MacBook awake with the lid closed",
+ "description": "Closing the lid sleeps a MacBook regardless of every timer and every keep-awake app. Here is the one supported way, the one mechanism that works without a display, and what each costs.",
+ "datePublished": "2026-08-28",
+ "dateModified": "2026-08-28",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/keep-macbook-awake-lid-closed/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "How to keep a MacBook awake with the lid closed",
+   "item": "https://getgoguma.com/blog/keep-macbook-awake-lid-closed/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Can I keep a MacBook awake with the lid closed without an external display?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, but only with `sudo pmset -a disablesleep 1`. Sleep timers, caffeinate, and menu bar keep-awake apps all stop working the moment the lid closes. disablesleep is the one switch that overrides lid sleep itself."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does caffeinate work with the lid closed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. caffeinate holds assertions that prevent idle sleep, and closing the lid is not idle sleep. The Mac sleeps anyway and the running caffeinate goes to sleep with it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is it safe to leave a MacBook running in a bag?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It is the one genuinely risky case. A closed laptop sheds heat through a small area, a bag insulates it, and nothing on the screen can warn you. Anything that holds a closed lid awake should also watch temperature and battery, and let go when either goes wrong."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is clamshell mode?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Apple's supported closed-lid state. Connect power and an external display, and the MacBook keeps running with the lid shut, driving the external screen. It exists for desks, not for bags \u2014 unplug the display and the machine sleeps."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>How to keep a MacBook awake with the lid closed</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-28</p>
+    <div class="answer"><p>Closing the lid puts a MacBook to sleep regardless of its energy settings. Apple's supported way to keep it running is clamshell mode, which requires power and an external display. Without a display, the only mechanism that holds a closed MacBook awake is <code>sudo pmset -a disablesleep 1</code> — a global switch that stays on until something sets it back, so it should always be paired with a way to turn it off.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The lid outranks everything</h2>
+<p>Every sleep timer in System Settings answers one question: how long to wait after you stop using the machine. The lid is not a timer. Closing it is an instruction, and macOS obeys it regardless of what the timers say, what caffeinate is holding, and what any menu bar app has toggled. That is why <a href="../caffeinate-lid-closed/">caffeinate does not survive the lid closing</a> — not because caffeinate is badly built, but because it holds off *idle* sleep, and lid sleep is not idle sleep.</p>
+<p>So "keep my MacBook awake with the lid closed" has exactly two honest answers, and they serve different situations.</p>
+<h2>The supported way: clamshell mode</h2>
+<p>Connect the MacBook to power and an external display, and it keeps running with the lid closed, driving the external screen. This is Apple's intended closed-lid state and it needs no commands and no tools.</p>
+<p>Its limits are the plug and the display. This is a desk arrangement. It answers "I want the laptop closed under the monitor," not "I want the job to finish while the laptop is in my bag."</p>
+<h2>The way that works without a display</h2>
+<p>One mechanism overrides lid sleep itself:</p>
+<pre><code>sudo pmset -a disablesleep 1</code></pre>
+<p>With that set, the machine does not sleep — lid open, lid closed, on battery, at all. Set it back with:</p>
+<pre><code>sudo pmset -a disablesleep 0</code></pre>
+<p>Two things to understand before using it, both covered at length in <a href="../pmset-disablesleep/">what disablesleep actually does</a>:</p>
+<ul><li><strong>It is a global switch, not a lease.</strong> It stays on until something sets it to 0. If the script that set it crashes, the switch stays set, and the machine will run its battery flat in the bag with nothing on screen to tell you.</li><li><strong>It is system-wide.</strong> There is no "until this job finishes" scoping. You build that yourself, or you use a tool that does.</li></ul>
+<h2>The part that is actually about safety</h2>
+<p>A closed MacBook that stays awake is doing something no MacBook was shaped for: working hard with its heat vents against fabric and its screen — the only way it can tell you anything — dark. The failure modes are not hypothetical: heat that would be a fan noise on a desk is a shutdown in a backpack, and a battery that would show you a warning at 10% just dies.</p>
+<p>Whatever holds the lid open awake should therefore also do three things:</p>
+<ul><li><strong>Expire on its own.</strong> A hold with no timeout is a flat battery waiting to happen.</li><li><strong>Watch temperature.</strong> With the lid closed there is no fan-noise feedback and no screen. The hold should release when the machine gets hot, because sleep is the correct response to heat you cannot see.</li><li><strong>Watch the battery.</strong> Same reasoning. Below a cutoff, let the machine sleep rather than run to zero.</li></ul>
+<p>This is the checklist <a href="../macbook-awake-in-bag-safe/">is it safe to keep a MacBook awake in a bag</a> develops in detail. goguma exists because doing all of this by hand, correctly, every time, is the actual work — its holds are leases that expire, and every hold is dropped if a closed machine gets hot or the battery falls below a cutout.</p>
+<h2>Which one you want</h2>
+<div class="tw"><table><thead><tr><th>Situation</th><th>Answer</th></tr></thead><tbody><tr><td>Laptop closed under an external monitor</td><td>Clamshell mode — plug in the display and power</td></tr><tr><td>A job must finish while the lid is closed, no display</td><td><code>disablesleep</code>, with a timeout and cutouts</td></tr><tr><td>An <a href="../keep-coding-agent-running-lid-closed/">AI coding agent is working</a> with the lid shut</td><td>Same mechanism, scoped to the agent's activity</td></tr><tr><td>The machine is asleep and a 3am job is coming</td><td>Neither — that needs <a href="../wake-mac-for-scheduled-job-pmset/">a scheduled wake</a></td></tr></tbody></table></div>
+<p>The last row matters: everything on this page keeps an awake machine awake. None of it wakes a machine that has already gone to sleep. Those are different mechanisms, and mixing them up is the most common way this goes wrong.</p>
+<h2>Common questions</h2><h3>Can I keep a MacBook awake with the lid closed without an external display?</h3><p>Yes, but only with <code>sudo pmset -a disablesleep 1</code>. Sleep timers, caffeinate, and menu bar keep-awake apps all stop working the moment the lid closes. disablesleep is the one switch that overrides lid sleep itself.</p><h3>Does caffeinate work with the lid closed?</h3><p>No. caffeinate holds assertions that prevent idle sleep, and closing the lid is not idle sleep. The Mac sleeps anyway and the running caffeinate goes to sleep with it.</p><h3>Is it safe to leave a MacBook running in a bag?</h3><p>It is the one genuinely risky case. A closed laptop sheds heat through a small area, a bag insulates it, and nothing on the screen can warn you. Anything that holds a closed lid awake should also watch temperature and battery, and let go when either goes wrong.</p><h3>What is clamshell mode?</h3><p>Apple's supported closed-lid state. Connect power and an external display, and the MacBook keeps running with the lid shut, driving the external screen. It exists for desks, not for bags — unplug the display and the machine sleeps.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

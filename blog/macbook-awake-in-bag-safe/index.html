@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is it safe to keep a MacBook awake with the lid closed in a bag?</title>
+<meta name="description" content="The two real risks are thermal and battery, and the reason lid-closed is the dangerous case is that you cannot see anything is wrong. What a safety cutoff has to check, and the sensor trap that makes a naive one useless.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="Is it safe to keep a MacBook awake with the lid closed in a bag?">
+<meta property="og:description" content="The two real risks are thermal and battery, and the reason lid-closed is the dangerous case is that you cannot see anything is wrong. What a safety cutoff has to check, and the sensor trap that makes a naive one useless.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/macbook-awake-in-bag-safe/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Is it safe to keep a MacBook awake with the lid closed in a bag?">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/macbook-awake-in-bag-safe/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Is it safe to keep a MacBook awake with the lid closed in a bag?",
+ "description": "The two real risks are thermal and battery, and the reason lid-closed is the dangerous case is that you cannot see anything is wrong. What a safety cutoff has to check, and the sensor trap that makes a naive one useless.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/macbook-awake-in-bag-safe/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "Is it safe to keep a MacBook awake with the lid closed in a bag?",
+   "item": "https://getgoguma.com/blog/macbook-awake-in-bag-safe/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is it dangerous to keep a MacBook awake with the lid closed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It is the riskiest way to do it. A closed laptop in a bag has no airflow and no display to warn you, so both overheating and a flat battery can happen without any signal. With the lid open the same conditions are visible and the normal system protections apply."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What temperature is too hot for a MacBook?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "There is no single number, but sustained CPU die temperatures above roughly 80\u00b0C with no airflow are worth treating as a cutoff. The more reliable signal is the OS's own thermal pressure warning, which accounts for the whole thermal state rather than one sensor."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Will my Mac shut down by itself if it overheats?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "macOS throttles aggressively and will eventually sleep or shut down to protect the hardware, but that is a last resort after sustained heat. A cutoff that releases the sleep hold earlier lets the machine sleep normally instead."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What battery level should stop a lid-closed hold?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Around 10% is a reasonable floor on battery power. The aim is to let the machine enter normal low-power sleep with charge to spare, rather than running down to a hard shutdown."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is it safe on mains power?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The battery risk goes away entirely, and the thermal risk remains. On mains with a closed lid and no airflow, temperature is the only thing worth watching."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>Is it safe to keep a MacBook awake with the lid closed in a bag?</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p>It is the one configuration where holding sleep off is genuinely risky — a sealed aluminium box with no airflow, and no way for you to see that anything is wrong. Two things have to be watched: temperature and charge. There is a trap in the first: on a Mac whose die sensors are unreadable, the fallback sensor reads <strong>tens of degrees cooler</strong>, so a bagged laptop can peg its silicon while every number stays under the limit.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>Why lid-closed is the case that matters</h2>
+<p>With the lid open, a Mac that is running hot or draining fast is *visible*. The fans are audible, the chassis is warm under your hands, the battery indicator is right there, and macOS can put a warning on the screen. Every normal protection assumes a person who can notice.</p>
+<p>Closed and in a bag, none of that holds. There is no display to warn you, no airflow, an insulating layer of fabric on all six sides, and you are not in the room. Whatever goes wrong goes wrong unobserved, for as long as it takes you to arrive somewhere.</p>
+<p>This is why a safety cutoff should be <strong>gated on the lid being closed</strong> rather than running all the time. With the lid open, a hot or draining machine is your problem to see and the system's protections are adequate. Closed, it is the tool's problem.</p>
+<h2>Risk one: heat</h2>
+<p>A closed MacBook running a sustained workload is a sealed aluminium box. Apple silicon is efficient enough that light work is fine indefinitely — but a compile, a video export, or an agent hammering a test suite is not light work, and neither is a bag.</p>
+<p>macOS will protect the hardware eventually: it throttles hard, then sleeps or shuts down. But "eventually" means after sustained heat, and the point of a cutoff is to release the hold *before* that, so the machine can enter normal sleep rather than being forced there.</p>
+<h3>The sensor trap</h3>
+<p>This is the part that makes naive thermal cutoffs useless, and it is worth knowing about even if you never write one.</p>
+<p>Reading CPU temperature on a Mac means reading SMC keys. The die sensors are the ones you want. On some machines those keys are unreadable — different silicon, different firmware, permissions — and code that falls back to a chassis-proximity sensor gets a number that is <strong>tens of degrees cooler</strong> than the die.</p>
+<p>So a bagged laptop can be thermally pegged while your reading sits comfortably under every threshold you set. The cutoff never fires. The number was always fine, and it was always measuring the wrong thing.</p>
+<p>Two consequences for anything doing this properly:</p>
+<p><strong>Also honour the OS's own thermal pressure warning</strong>, independent of the degree reading. macOS knows its whole thermal state, including sensors you cannot read and pressure you cannot compute. When it says things are bad, that should fire the cutout regardless of what a single sensor reports.</p>
+<p><strong>An unreadable sensor is not "safe".</strong> If the die keys cannot be read, the honest answer is that the valve is inoperative — and the user should be told that, rather than being left believing something is protecting them.</p>
+<h2>Risk two: charge</h2>
+<p>Simpler, and only applies on battery. A closed machine held awake will keep discharging until it dies, and a hard shutdown at 0% is worse than sleeping at 10%: it is harder on the battery, it loses whatever was in flight, and it means the laptop is dead when you next open it.</p>
+<p>So on battery, with the lid closed, below some floor, everything should be released so the Mac can sleep normally with charge to spare. Around 10% is reasonable. On mains there is nothing to protect against and the check should not apply.</p>
+<h2>The asymmetry nobody accounts for</h2>
+<p>There is a subtle failure here that matters if the tool also *wakes* your Mac rather than only holding it awake.</p>
+<p><strong>A cutoff cannot un-wake a machine.</strong> By the time it fires, the wake has already happened and the energy is already spent. On a nearly flat battery the sequence is: wake, immediately trip the cutoff, release, sleep — having spent charge and not run the job. You end up closer to a hard shutdown than if nothing had happened at all.</p>
+<p>Which means the battery check has to run <strong>before the wake is armed</strong>, not only after it fires. Refusing the wake is strictly better: the machine stays asleep, the charge is preserved, and the job is missed exactly as it would have been anyway.</p>
+<p>And the margin should be the job's own measured cost, not a flat number. A blanket "don't wake below 25%" refuses far more than it needs to — most jobs are seconds of held-awake time and a fraction of a percent of battery. Refusing to wake at 24% for a 57-second sync protects nobody. Using what that specific job has actually drawn in the past means only genuinely expensive jobs push the floor up.</p>
+<h2>Practical advice</h2>
+<p>If you are going to leave a Mac working with the lid shut:</p>
+<ul><li><strong>Hard surface, not a bag,</strong> whenever you have the choice. A desk or a stand beats a rucksack by a wide margin.</li><li><strong>Mains power if you can.</strong> It removes the battery risk completely and leaves only heat.</li><li><strong>Hold sleep off only while work is happening,</strong> not as a permanent toggle. This is the single biggest difference between a safe setup and a flat battery — and it is why a hold should expire by itself rather than waiting to be switched off.</li><li><strong>Make sure something releases the hold if the tool dies.</strong> <a href="../pmset-disablesleep/"><code>pmset disablesleep</code> persists</a> after the process that set it is killed, so a crash can leave a Mac that cannot sleep at all.</li></ul>
+<p>goguma applies both cutouts only with the lid closed, fires the thermal one on the OS warning as well as on the degree reading, refuses a wake the battery cannot afford using that job's own measured drain, and expires every hold on a timer so nothing depends on a clean shutdown.</p>
+<h2>Common questions</h2><h3>Is it dangerous to keep a MacBook awake with the lid closed?</h3><p>It is the riskiest way to do it. A closed laptop in a bag has no airflow and no display to warn you, so both overheating and a flat battery can happen without any signal. With the lid open the same conditions are visible and the normal system protections apply.</p><h3>What temperature is too hot for a MacBook?</h3><p>There is no single number, but sustained CPU die temperatures above roughly 80°C with no airflow are worth treating as a cutoff. The more reliable signal is the OS's own thermal pressure warning, which accounts for the whole thermal state rather than one sensor.</p><h3>Will my Mac shut down by itself if it overheats?</h3><p>macOS throttles aggressively and will eventually sleep or shut down to protect the hardware, but that is a last resort after sustained heat. A cutoff that releases the sleep hold earlier lets the machine sleep normally instead.</p><h3>What battery level should stop a lid-closed hold?</h3><p>Around 10% is a reasonable floor on battery power. The aim is to let the machine enter normal low-power sleep with charge to spare, rather than running down to a hard shutdown.</p><h3>Is it safe on mains power?</h3><p>The battery risk goes away entirely, and the thermal risk remains. On mains with a closed lid and no airflow, temperature is the only thing worth watching.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

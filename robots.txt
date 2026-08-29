@@ -1,0 +1,48 @@
+# getgoguma.com
+#
+# Everything here is documentation for a free, open-source tool. There is
+# nothing to gate, so nothing is disallowed — including the answer engines,
+# which are named explicitly rather than left to the wildcard because several
+# of them read a missing rule as a reason to be cautious.
+
+User-agent: *
+Allow: /
+
+# Answer engines and AI crawlers.
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://getgoguma.com/sitemap.xml

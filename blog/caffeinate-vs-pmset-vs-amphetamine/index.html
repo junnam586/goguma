@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>caffeinate vs pmset vs Amphetamine — what each one actually does</title>
+<meta name="description" content="Three tools people reach for interchangeably that behave completely differently with the lid closed, on battery, and when the thing holding the assertion dies.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="caffeinate vs pmset vs Amphetamine — what each one actually does">
+<meta property="og:description" content="Three tools people reach for interchangeably that behave completely differently with the lid closed, on battery, and when the thing holding the assertion dies.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/caffeinate-vs-pmset-vs-amphetamine/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="caffeinate vs pmset vs Amphetamine — what each one actually does">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/caffeinate-vs-pmset-vs-amphetamine/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "caffeinate vs pmset vs Amphetamine \u2014 what each one actually does",
+ "description": "Three tools people reach for interchangeably that behave completely differently with the lid closed, on battery, and when the thing holding the assertion dies.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/caffeinate-vs-pmset-vs-amphetamine/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "caffeinate vs pmset vs Amphetamine \u2014 what each one actually does",
+   "item": "https://getgoguma.com/blog/caffeinate-vs-pmset-vs-amphetamine/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "What is the difference between caffeinate and pmset?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "caffeinate creates a power assertion scoped to a process or a duration, and macOS drops it automatically when that ends. pmset -a disablesleep 1 changes a global system setting that stays changed until something sets it back, including across the death of whatever set it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Is Amphetamine better than caffeinate?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "It is more convenient rather than more capable. Amphetamine gives you a menu bar UI, triggers and timers over broadly the same underlying mechanisms, which matters if you want app-based or drive-based activation. For wrapping a single command, caffeinate is built in and releases by itself."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which one keeps a MacBook awake with the lid closed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Only the pmset disablesleep route, or an app that uses it. caffeinate asserts against idle sleep, and closing the lid triggers a separate clamshell sleep path that the assertion does not cover."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can any of them wake a sleeping Mac?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. All three prevent an awake machine from sleeping. Waking a sleeping one requires pmset schedule, which is a different command and a different mechanism."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What happens if the process holding the assertion is killed?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "With caffeinate, the assertion dies with the process and normal sleep resumes \u2014 this is the correct behaviour. With pmset -a disablesleep 1, the setting survives, so the Mac cannot sleep until something explicitly sets it back to 0."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>caffeinate vs pmset vs Amphetamine — what each one actually does</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p><code>caffeinate</code> asserts against idle sleep for the life of a command and releases automatically — but a closed lid defeats it. <code>pmset -a disablesleep 1</code> does hold a closed lid awake, but it is a global setting that <strong>persists after the process that set it dies</strong>. Amphetamine is a GUI wrapper with triggers and timers that has to be turned off manually. None of the three can wake a Mac that is already asleep.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The one-line version</h2>
+<div class="tw"><table><thead><tr><th></th><th>holds idle sleep</th><th>holds a closed lid</th><th>releases by itself</th><th>can wake a sleeping Mac</th></tr></thead><tbody><tr><td><code>caffeinate</code></td><td>yes</td><td><strong>no</strong></td><td>yes, when the command exits</td><td>no</td></tr><tr><td><code>pmset -a disablesleep 1</code></td><td>yes</td><td>yes</td><td><strong>no</strong></td><td>no</td></tr><tr><td>Amphetamine</td><td>yes</td><td>yes</td><td>on a timer or trigger you set</td><td>no</td></tr><tr><td><code>pmset schedule wake</code></td><td>—</td><td>—</td><td>—</td><td><strong>yes</strong></td></tr></tbody></table></div>
+<p>The last row is the one worth staring at. The first three are the same category of thing — stop an awake machine sleeping — and people compare them as though the category covered the whole problem. It does not. If your Mac is already asleep at 02:59 and a job is due at 03:00, none of the first three help at all.</p>
+<h2>caffeinate</h2>
+<p>Built into macOS. It creates a power assertion and holds it for a duration or <a href="../keep-mac-awake-terminal-command/">for the lifetime of a command</a>:</p>
+<pre><code>caffeinate -s /usr/local/bin/nightly-backup   # until the command exits
+caffeinate -t 3600                            # for an hour
+caffeinate -w 4821                            # until PID 4821 exits</code></pre>
+<p>The <code>-s</code> form is the right shape for a job: the hold lasts exactly as long as the work and is released by the kernel when the process ends, including if it crashes or is killed. There is no state to clean up.</p>
+<p><strong>Its limit is the lid.</strong> A power assertion is a request not to go to *idle* sleep. Closing the lid takes a different, lower-level path. On a MacBook with no external display and no mains power, the lid closing puts the machine to sleep and your caffeinated job stops mid-run. This surprises people constantly, because the tool did nothing wrong — it is doing exactly what it says, and what it says is narrower than what people assume.</p>
+<h2>pmset -a disablesleep 1</h2>
+<p>This is the blunt instrument, and it does work with the lid closed:</p>
+<pre><code>sudo pmset -a disablesleep 1    # the Mac now cannot sleep, at all
+sudo pmset -a disablesleep 0    # back to normal</code></pre>
+<p>Two things make it dangerous in a way <code>caffeinate</code> is not.</p>
+<p><strong>It is global.</strong> There is no scoping to a process, a duration, or a reason. The Mac cannot sleep. Not idle sleep, not lid sleep, not low-power sleep. Everything.</p>
+<p><strong>It persists.</strong> This is the part that catches people. <code>disablesleep</code> is written into the power management preferences. It is <strong>not</strong> cleared when the process that set it exits, crashes, or is force-killed. A script that sets it and dies before its cleanup line leaves a Mac that will never sleep again until a human notices and runs <code>pmset</code> by hand — and the symptom is a laptop that arrives somewhere with a flat battery and a warm chassis, hours later, with nothing to point at the cause.</p>
+<p>Any tool built on <a href="../pmset-disablesleep/"><code>disablesleep</code></a> therefore needs a dead-man switch: something that notices the owner is gone and clears the setting. goguma's privileged helper clears a stranded block after 60 seconds without contact from the daemon, for exactly this reason.</p>
+<h2>Amphetamine</h2>
+<p>A well-made free menu bar app with a real feature set: triggers on app launch, on connecting a specific drive, on an audio device being active, plus timers and session control. If you want "keep the Mac awake whenever Logic is open", it is the tool.</p>
+<p>Its shape is the same as the others though: it holds an awake machine awake, and <strong>you have to remember to turn it off.</strong> The triggers reduce how often you have to, but the failure mode is unchanged — a session left on, a laptop in a bag, a flat battery. That is the single most common complaint about every tool in this category, and it is a design consequence rather than a bug.</p>
+<h2>What the comparison misses entirely</h2>
+<p>All three answer "how do I stop my Mac sleeping". Most people arriving at that question actually have one of two different problems:</p>
+<p><strong>"My scheduled job didn't run."</strong> The machine was asleep when it was due. Keeping it awake from now until then is the wrong shape — you would be running a laptop at desk power all night to do ninety seconds of work at 03:00. What you want is for it to *wake* for the job and sleep again afterwards, which needs <a href="../wake-mac-for-scheduled-job-pmset/"><code>pmset schedule</code></a>, a different mechanism from all three above.</p>
+<p><strong>"My agent stopped when I closed the lid."</strong> Here you do want a hold, and it does have to survive the lid, so <code>disablesleep</code> is the right mechanism. But it should be scoped to the work rather than left on, and you cannot tell when the work is happening by <a href="../cannot-detect-ai-agent-working/">watching the process</a> — the agent has to report it.</p>
+<h2>Choosing</h2>
+<ul><li><strong>Wrapping one command, lid open</strong> — <code>caffeinate -s</code>. Built in, correct, self-releasing.</li><li><strong>A GUI toggle with triggers</strong> — Amphetamine, or the free alternatives in <a href="../amphetamine-alternatives-mac/">Amphetamine alternatives</a>.</li><li><strong>Lid closed, no external display</strong> — you need <code>disablesleep</code>, so use something that manages it with an automatic release rather than setting it by hand.</li><li><strong>A job that fires while the Mac is asleep</strong> — none of them. You need a scheduled wake.</li></ul>
+<h2>Common questions</h2><h3>What is the difference between caffeinate and pmset?</h3><p>caffeinate creates a power assertion scoped to a process or a duration, and macOS drops it automatically when that ends. pmset -a disablesleep 1 changes a global system setting that stays changed until something sets it back, including across the death of whatever set it.</p><h3>Is Amphetamine better than caffeinate?</h3><p>It is more convenient rather than more capable. Amphetamine gives you a menu bar UI, triggers and timers over broadly the same underlying mechanisms, which matters if you want app-based or drive-based activation. For wrapping a single command, caffeinate is built in and releases by itself.</p><h3>Which one keeps a MacBook awake with the lid closed?</h3><p>Only the pmset disablesleep route, or an app that uses it. caffeinate asserts against idle sleep, and closing the lid triggers a separate clamshell sleep path that the assertion does not cover.</p><h3>Can any of them wake a sleeping Mac?</h3><p>No. All three prevent an awake machine from sleeping. Waking a sleeping one requires pmset schedule, which is a different command and a different mechanism.</p><h3>What happens if the process holding the assertion is killed?</h3><p>With caffeinate, the assertion dies with the process and normal sleep resumes — this is the correct behaviour. With pmset -a disablesleep 1, the setting survives, so the Mac cannot sleep until something explicitly sets it back to 0.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

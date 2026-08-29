@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Why SSH sessions drop when your Mac sleeps, and what actually survives</title>
+<meta name="description" content="Sleep suspends the network, so every SSH connection dies with it — in both directions. What tmux and mosh actually solve, what ttyskeepawake does, and how to keep either end alive on purpose.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="Why SSH sessions drop when your Mac sleeps, and what actually survives">
+<meta property="og:description" content="Sleep suspends the network, so every SSH connection dies with it — in both directions. What tmux and mosh actually solve, what ttyskeepawake does, and how to keep either end alive on purpose.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/ssh-sessions-mac-sleep/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Why SSH sessions drop when your Mac sleeps, and what actually survives">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/ssh-sessions-mac-sleep/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "Why SSH sessions drop when your Mac sleeps, and what actually survives",
+ "description": "Sleep suspends the network, so every SSH connection dies with it \u2014 in both directions. What tmux and mosh actually solve, what ttyskeepawake does, and how to keep either end alive on purpose.",
+ "datePublished": "2026-08-28",
+ "dateModified": "2026-08-28",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/ssh-sessions-mac-sleep/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "Why SSH sessions drop when your Mac sleeps, and what actually survives",
+   "item": "https://getgoguma.com/blog/ssh-sessions-mac-sleep/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Why does my SSH session die when I close my MacBook?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Closing the lid sleeps the Mac, sleep suspends the network stack, and the TCP connection under the SSH session goes with it. The server eventually notices the peer is gone and ends the session."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does tmux stop SSH disconnecting?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No \u2014 tmux runs on the server and keeps your programs and shell alive there when the connection drops, so you can reattach and continue. The disconnection still happens; tmux makes it cost nothing."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Can I SSH into a sleeping Mac?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Not while it is asleep. With Wake for network access on, some traffic can wake it briefly on a local network, but for dependable remote access the honest answer is a machine that is awake \u2014 either held awake, or woken on a schedule you control."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Why does my Mac not sleep while someone is SSH'd in?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "The ttyskeepawake setting, on by default \u2014 while any terminal session is active the system skips idle sleep. A tty counts as inactive only once its idle time exceeds the sleep timer."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>Why SSH sessions drop when your Mac sleeps, and what actually survives</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-28</p>
+    <div class="answer"><p>A sleeping Mac has no network, so SSH dies in both directions — outbound sessions to servers drop, and nobody can reach the Mac itself. tmux or mosh on the remote end make the disconnection survivable; they do not prevent it. To keep the Mac from sleeping while someone is SSH'd into it, the ttyskeepawake setting (on by default) already does that. To keep an outbound session alive, the Mac must simply not sleep while it matters — a hold scoped to the work.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>Sleep is a network event</h2>
+<p>Every SSH connection is a TCP connection, and a sleeping Mac does not have those. Whatever else sleep suspends, it suspends the network stack, and both directions of SSH go down with it:</p>
+<ul><li><strong>Outbound</strong> — your laptop's session into a server dies when the laptop sleeps. The server's sshd notices a dead peer, eventually, and your remote shell — and anything running in the foreground of it — is gone.</li><li><strong>Inbound</strong> — nobody can SSH into a sleeping Mac, because there is nothing listening. The machine is not slow to answer; it is absent.</li></ul>
+<p>Most advice on this topic addresses one direction while sounding like it addresses both, which is how people end up with tmux installed and a job that still died.</p>
+<h2>Outbound: make the disconnection cost nothing, or prevent it</h2>
+<p><strong>tmux (or screen) runs on the server, not on your Mac.</strong> When your laptop sleeps and the connection drops, the tmux session on the server keeps your shell and your processes alive. You reattach in the morning and the overnight build is still there. This is the right tool when *disconnection is acceptable* and what matters is that remote work survives it.</p>
+<p><strong>mosh smooths the reconnection</strong> — it picks the session back up when your Mac returns, without a fresh login. Same category: it makes dropping and returning cheap. It does not keep anything alive on your Mac's side.</p>
+<p><strong>Neither prevents the disconnect.</strong> If the session itself must stay up — a long interactive process you are watching, a port-forward something depends on — then the Mac must not sleep while it matters, and the clean way is <a href="../keep-mac-awake-terminal-command/">a hold scoped to the work</a>, not a permanent settings change. With the lid closed, that becomes <a href="../keep-macbook-awake-lid-closed/">a different problem</a> with a different answer.</p>
+<h2>Inbound: the Mac as the server</h2>
+<p>Two settings govern this, both visible in <a href="../pmset-sleep-settings-explained/"><code>pmset -g</code></a>:</p>
+<p><strong><code>ttyskeepawake</code>, on by default, is why an active SSH session keeps the Mac up.</strong> From <code>pmset(1)</code>: it prevents idle system sleep while any tty is active, and a tty counts as inactive only once its idle time exceeds the system sleep timer. In practice: while you are working in the session, the Mac stays up; walk away, and the idle clock eventually runs out on both.</p>
+<p><strong><code>womp</code> — Wake for network access — keeps a sleeping Mac reachable, barely.</strong> The machine wakes briefly for certain traffic on the local network. These are <a href="../dark-wake-power-nap/">dark wakes</a>, seconds long, and fine for what they are for; a machine you depend on reaching over SSH at arbitrary times is a machine that should actually be awake.</p>
+<p>And note what <code>ttyskeepawake</code> does not cover: the lid. An SSH session into a MacBook whose lid closes ends the way <a href="../caffeinate-lid-closed/">everything ends when the lid closes</a>.</p>
+<h2>The overnight case</h2>
+<p>The pattern behind most SSH-and-sleep frustration is a Mac that needs to be *available* — as the client driving remote work, or as the server being reached — during hours when it would naturally sleep. Piecemeal fixes stack up: tmux for the disconnects, womp for reachability, a longer sleep timer for the evening.</p>
+<p>The stable arrangement is simpler to state: the machine should be awake exactly when something needs it, and asleep otherwise. For sessions, that is a hold scoped to the session's work. For scheduled overnight work, it is <a href="../wake-mac-for-scheduled-job-pmset/">a wake armed for the job's fire time</a> — which is the arrangement goguma maintains automatically, and the reason <a href="../cron-jobs-dont-run-mac-asleep/">a sleeping Mac's cron jobs</a> are the adjacent problem this one usually turns out to be.</p>
+<h2>Common questions</h2><h3>Why does my SSH session die when I close my MacBook?</h3><p>Closing the lid sleeps the Mac, sleep suspends the network stack, and the TCP connection under the SSH session goes with it. The server eventually notices the peer is gone and ends the session.</p><h3>Does tmux stop SSH disconnecting?</h3><p>No — tmux runs on the server and keeps your programs and shell alive there when the connection drops, so you can reattach and continue. The disconnection still happens; tmux makes it cost nothing.</p><h3>Can I SSH into a sleeping Mac?</h3><p>Not while it is asleep. With Wake for network access on, some traffic can wake it briefly on a local network, but for dependable remote access the honest answer is a machine that is awake — either held awake, or woken on a schedule you control.</p><h3>Why does my Mac not sleep while someone is SSH'd in?</h3><p>The ttyskeepawake setting, on by default — while any terminal session is active the system skips idle sleep. A tty counts as inactive only once its idle time exceeds the sleep timer.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

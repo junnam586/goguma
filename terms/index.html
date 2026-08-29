@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>goguma · terms</title>
+<meta name="description" content="goguma is MIT-licensed software, not a service. What that means for you.">
+<link rel="icon" href="../assets/potato.png">
+<meta property="og:title" content="goguma · terms">
+<meta property="og:description" content="goguma is MIT-licensed software, not a service. What that means for you.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/terms/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="goguma · terms">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/terms/">
+<style>
+/* The privacy page's sheet, unchanged. Two documents that read differently
+   would suggest they came from different places, which is the opposite of
+   what a pair of policy pages is for. */
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  min-height:100vh;display:flex;flex-direction:column;
+}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+
+h1,h2{margin:0;letter-spacing:-.035em;line-height:1.04;font-weight:600}
+h1{font-size:clamp(34px,5.1vw,52px)}
+h2{font-size:clamp(19px,2.1vw,23px);letter-spacing:-.028em;line-height:1.2;
+   margin:clamp(38px,5vh,52px) 0 0}
+p{margin:14px 0 0;font-size:16px;line-height:1.62;color:var(--ink-2)}
+p strong{color:var(--ink);font-weight:600}
+ul{margin:14px 0 0;padding-left:20px}
+li{font-size:16px;line-height:1.62;color:var(--ink-2);margin:7px 0 0}
+code{
+  overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink);
+}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+
+.top{max-width:none;padding:14px 28px 0}
+.home{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:23px;font-weight:600;letter-spacing:-.022em;
+  color:var(--ink);text-decoration:none;transition:opacity .18s;
+}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+
+.head{padding-top:clamp(34px,7vh,72px)}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+
+/* Set on the ground, not in a card. DESIGN.md: no cards, no borders, sections
+   separated by whitespace and hairline rules and nothing else. */
+.summary{
+  margin:clamp(26px,4vh,38px) 0 0;
+  padding-bottom:clamp(26px,4vh,38px);
+  border-bottom:1px solid var(--rule);
+}
+.summary p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,20px);
+  line-height:1.5;letter-spacing:-.012em}
+.summary p + p{margin-top:12px}
+
+/* The licence text, quoted rather than paraphrased. It is the operative part
+   of this page, so it is set apart from the prose that explains it — by two
+   hairline rules and air, which is the only device this site separates things
+   with. It was a tinted slab behind a 3px left bar: a callout box, which is
+   both a card and a border, and reads as boilerplate rather than as the one
+   paragraph on the page that carries legal weight. */
+.licence{
+  margin:20px 0 0;padding:20px 0;
+  border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+}
+.licence p{margin:0;font-size:14.5px;line-height:1.6}
+.licence p + p{margin-top:10px}
+
+.body{padding-bottom:clamp(30px,6vh,64px)}
+
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;
+  font-size:13px;color:rgba(36,26,44,.66);background:none}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-links a:hover{color:rgba(36,26,44,.85);border-bottom-color:currentColor}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../"><img src="../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+
+  <div class="wrap head">
+    <h1>Terms</h1>
+    <p class="stamp">Last updated 20 August 2026</p>
+
+    <div class="summary">
+      <p><strong>goguma is software you download and run, not a service you sign up
+        for.</strong> There is no account, no payment, and no server of ours holding
+        anything of yours.</p>
+      <p>It is free and open source under the MIT licence, which is the real
+        agreement. Everything below explains it.</p>
+    </div>
+  </div>
+
+  <div class="wrap body">
+
+    <h2>The licence</h2>
+    <p>goguma is released under the MIT licence. You may use it, copy it, change it,
+      and distribute it, commercially or otherwise, provided the copyright notice
+      and the licence text travel with it. The full text is in
+      <a href="https://github.com/junnam586/goguma/blob/main/LICENSE">LICENSE</a>.</p>
+    <p>The part that matters most is the part people skip, so it is quoted here
+      rather than summarised:</p>
+    <div class="licence">
+      <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</p>
+      <p>IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+        DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+        OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE
+        OR OTHER DEALINGS IN THE SOFTWARE.</p>
+    </div>
+
+    <h2>What you are installing</h2>
+    <p>goguma is not a single sandboxed app, and it should not pretend to be. Setting
+      it up installs four things:</p>
+    <ul>
+      <li>a background service that runs as you, holding your jobs and history;</li>
+      <li>a small <strong>privileged helper</strong> that runs as root, because
+        blocking sleep and scheduling a wake are operations macOS only permits with
+        privilege;</li>
+      <li>launchd entries that keep both running;</li>
+      <li>the <code>goguma</code> command line tools.</li>
+    </ul>
+    <p>The helper answers six messages and holds no policy of its own. Every binary
+      is signed with a Developer ID and notarised by Apple, and setup tells you who
+      signed the helper before you are asked for your password — and refuses to
+      install it if that signature cannot be verified.
+      <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">SECURITY.md</a>
+      describes all of it. By installing goguma you are agreeing to those changes to
+      your machine.</p>
+
+    <h2>What it does to your machine's power settings</h2>
+    <p>goguma blocks sleep and schedules wakes by driving macOS's own
+      <code>pmset</code>. That means it deliberately keeps your Mac awake when a job
+      needs it, and deliberately wakes it from sleep at times you did not press a
+      key.</p>
+    <p>It is built to fail safe: holds expire on their own rather than lasting until
+      something turns them off, the privileged helper releases a stranded block if
+      the service goes away, and it drops every hold if a lid-closed machine gets hot
+      or the battery runs down. Those are safeguards, not guarantees. Hardware
+      fails, batteries age, macOS updates change behaviour, and a machine that is
+      asked to wake may not. <strong>Do not rely on goguma alone for anything whose
+      failure you could not tolerate</strong>, and keep a way of finding out when a
+      job has not run.</p>
+
+    <h2>The website and the mailing list</h2>
+    <p>getgoguma.com is documentation. It sets no cookies and runs no analytics.</p>
+    <p>If you subscribe to the mailing list, you are asking us to email you when a
+      bug is found and when it is fixed, and nothing else. Every message has an
+      unsubscribe link. What happens to your address is set out in the
+      <a href="../privacy/">privacy page</a>.</p>
+
+    <h2>Other people's terms</h2>
+    <p>Downloads, source and releases are hosted by <strong>GitHub</strong>; the app
+      is signed and notarised through <strong>Apple</strong>; the command line tools
+      can be installed with <strong>Homebrew</strong>; and the mailing list runs on
+      <strong>Buttondown</strong>. Your dealings with those services are governed by
+      their terms, not ours.</p>
+
+    <h2>Changes</h2>
+    <p>If these terms change, the date at the top changes with them, and the edit
+      appears in the repository's history along with everything else. Continuing to
+      use goguma after a change means accepting it. The licence itself can only
+      change for future versions — the MIT grant on a version you already have is
+      irrevocable.</p>
+
+    <!-- TODO(jun): set the jurisdiction you actually live in, or delete this
+         section. It is the one statement on either page that cannot be derived
+         from the repository. -->
+    <h2>Governing law</h2>
+    <p>These terms are governed by the laws of the jurisdiction in which the author
+      resides, without regard to conflict-of-law rules. Nothing here removes any
+      right you hold as a consumer under the law of your own country.</p>
+
+    <h2>Getting in touch</h2>
+    <p>Open an issue at
+      <a href="https://github.com/junnam586/goguma/issues">github.com/junnam586/goguma/issues</a>.</p>
+
+  </div>
+</div>
+
+<footer>
+  <p class="foot-links">
+    <a href="../">goguma</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/releases">Releases</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../blog/">Writing</a> ·
+    <a href="../privacy/">Privacy</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+
+</body>
+</html>

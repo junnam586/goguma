@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>goguma · updates</title>
+<meta name="description" content="Get updates on goguma: bugs found, fixes released, and new features.">
+<link rel="icon" href="../assets/potato.png">
+<meta property="og:title" content="goguma · updates">
+<meta property="og:description" content="Get updates on goguma.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/updates/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="goguma · updates">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/updates/">
+<style>
+/*
+This page is the landing page's closing block, doing the same job: one ask, at
+the point of highest intent, centred, on the dusk sky the page already ends on.
+
+Everything here is lifted from index.html rather than reinvented. The previous
+version had its own width, its own type scale, its own footer and a left-
+aligned headline with nothing beside it, which left a quarter of the screen
+empty and read as a different site wearing the same colours.
+*/
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:1180px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  min-height:100vh;display:flex;flex-direction:column;
+}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+
+/* Type, at the landing page's scale. */
+h1,h2{margin:0;letter-spacing:-.035em;line-height:1.04;font-weight:600}
+h1{font-size:clamp(34px,5.1vw,62px)}
+h2{font-size:clamp(17px,1.5vw,19px);letter-spacing:-.012em;line-height:1.25}
+.lede{
+  font-size:clamp(18px,2.05vw,23px);line-height:1.48;color:var(--ink-2);
+  letter-spacing:-.012em;margin:16px auto 0;width:100%;max-width:37ch;text-wrap:balance;
+}
+/* Flat ground, the colour every section of the site uses. There was a dusk
+   sky here, which is the decorative gradient the design note rules out. */
+.sky{flex:1;display:flex;flex-direction:column;background:var(--ground)}
+
+/* The wordmark is the way back: top left, in the page's own sans at the size
+   a mark is read at, not mono caps pretending to be an eyebrow.
+
+   On its own margin rather than the content's. The 1180px grid puts its left
+   edge 130px in on a 1440 screen, which is right for a headline and wrong for
+   a mark: a logo belongs near the corner. */
+.top{max-width:none;padding:14px 28px 0}
+.home{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:23px;font-weight:600;letter-spacing:-.022em;
+  color:var(--ink);text-decoration:none;transition:opacity .18s;
+}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+
+/* Centred in the space between the mark and the footer.
+   With `flex:1` alone the block sat at the top and all the slack collected in
+   one lump between the last paragraph and the footer links: 105px on a 900px
+   window, which read as the page having stopped early. Distributing it puts
+   the same air above and below. */
+.close{
+  /* No padding of its own. `safe center` splits the free space evenly, and any
+     padding here is added to the top half only, which is exactly the amount by
+     which the gap above the headline exceeded the one below it. */
+  text-align:center;padding:0;
+  /* `safe center` so that centring never pushes content off the top. Plain
+     `center` overflows at both ends once the content is taller than the space,
+     which on a short window put the wordmark above the viewport. */
+  flex:1;display:flex;flex-direction:column;justify-content:safe center;
+}
+
+/* The form is this page's call to action, so it is the hero button's shape and
+   sits where the hero button sits. */
+form{
+  display:flex;gap:12px;justify-content:center;flex-wrap:wrap;
+  /* `width:100%` alongside the max.
+     `.close` is a flex column, and an `auto` cross-axis margin makes a flex
+     item content-sized instead of stretched, so the form settled at 376px and
+     the button wrapped onto its own line. */
+  margin:30px auto 0;width:100%;max-width:520px;
+}
+input[type=email]{
+  flex:1 1 240px;min-width:0;
+  height:52px;padding:0 18px;font-size:15px;font-family:inherit;color:var(--ink);
+  background:var(--card);border:1px solid rgba(36,26,44,.12);border-radius:13px;
+  transition:border-color .18s,box-shadow .18s;
+}
+input[type=email]::placeholder{color:#A99DB0}
+input[type=email]:focus{
+  outline:none;border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);
+}
+/* The closing block's button, not the hero's. On the dusk sky the landing page
+   switches to a dark slab with a soft radius, and a purple pill here was the
+   one element on the page that had not been copied from it. */
+button{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:52px;padding:0 22px;font-size:15px;font-weight:500;font-family:inherit;
+  border-radius:13px;cursor:pointer;color:#fff;
+  background:#211630;border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 8px 24px rgba(36,26,44,.28), inset 0 1px 0 rgba(255,255,255,.14);
+  transition:transform .18s cubic-bezier(.2,.8,.3,1),background .18s,box-shadow .18s;
+}
+button:hover{background:#160E22;box-shadow:0 12px 32px rgba(36,26,44,.38), inset 0 1px 0 rgba(255,255,255,.18)}
+button:active{transform:scale(.97)}
+button[disabled]{opacity:.5;cursor:default;box-shadow:none}
+
+/* Fine print attached to the button, exactly as the landing page does it. */
+.close-alt{margin:14px 0 0;text-align:center;font-family:var(--mono);font-size:12px;
+  color:rgba(36,26,44,.66)}
+.close-alt.warn{color:var(--ember)}
+/* The typo suggestion is a link inside the fine print, so it takes the colour of
+   whichever state the line is in rather than introducing a third one. */
+.close-alt a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+
+/* The detail, in two columns on the page's own margin. Hairline rule and
+   space, no cards: the design note is explicit that this page has none. */
+.cols{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:clamp(36px,6vw,92px);
+  /* Further below the ask. The rule sat close under "bugs, fixes…", so the
+     supporting detail read as part of the signup rather than as the section
+     after it. */
+  width:100%;max-width:940px;margin:clamp(40px,6.5vh,84px) auto 0;
+  padding-top:clamp(26px,4vh,44px);
+  border-top:1px solid rgba(36,26,44,.10);
+  text-align:left;
+}
+.cols p{margin:10px 0 0;font-size:14.5px;line-height:1.6;color:var(--ink-2);max-width:46ch}
+code{
+  overflow-wrap:anywhere;font-family:var(--mono);font-size:.92em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink);
+}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+
+/* The landing page's footer, verbatim: two lines, links centred and underlined,
+   the licence beneath as a statement rather than another link. */
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;
+  font-size:13px;color:rgba(36,26,44,.66);background:none}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-links a:hover{color:rgba(36,26,44,.85);border-bottom-color:currentColor}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+
+@media (max-width:760px){.cols{grid-template-columns:1fr;gap:32px;text-align:left}}
+@media (max-width:520px){
+  form{flex-direction:column}
+  /* `flex:1 1 240px` sets the basis on the main axis, so a stacked form turns
+     240px of intended minimum width into 240px of input height. */
+  input[type=email]{flex:none;width:100%}
+  button{justify-content:center;width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="sky">
+  <div class="wrap top">
+    <a class="home" href="../"><img src="../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+
+  <div class="wrap close">
+    <h1>Get updates on goguma.</h1>
+    <p class="lede">goguma runs in the background, so a bug can sit there for days
+      before you notice. Leave your email and you'll get a message when one is
+      found and when it is fixed.</p>
+
+    <!--
+      Buttondown's embed endpoint. It takes a POST with a single `email` field,
+      which is what this form already sent, so wiring it up was setting `action`
+      and nothing else. The script at the foot disables itself the moment this
+      attribute is non-empty, so there is no second place to remember.
+
+      `target="_blank"` because Buttondown answers with its own confirmation
+      page. Without it the reader is navigated away from getgoguma.com to a page
+      that is not ours and has no way back.
+
+      The script at the foot checks the address before this posts. Only the
+      no-endpoint guard turns itself off once `action` is set; the checking runs
+      either way.
+    -->
+    <form action="https://buttondown.com/api/emails/embed-subscribe/junnam586" method="post" id="signup" target="_blank">
+      <input type="email" name="email" placeholder="you@example.com"
+             required autocomplete="email" aria-label="Email address"
+             autocapitalize="off" spellcheck="false">
+      <button type="submit">Get updates</button>
+    </form>
+    <p class="close-alt" aria-live="polite">bugs, fixes, and the occasional new feature</p>
+
+    <div class="cols">
+      <section>
+        <h2>Or get them in goguma</h2>
+        <p>It can check once a day for the same notices, with no address and no
+          account at all:</p>
+        <p><code>goguma config set advisory_checks on</code></p>
+        <p>One small file from this site, with no identifier attached, not even
+          which version you're running.</p>
+      </section>
+
+      <section>
+        <h2>What you're signing up for</h2>
+        <p>Your address is used to mail you about goguma. Buttondown holds the
+          list and sends the mail. Not sold, no tracking pixel.</p>
+        <p>goguma itself still sends nothing about you or your jobs.</p>
+        <p>It's a mailing list, not a change to the product.
+          <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a>
+          has the detail.</p>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <p class="foot-links">
+      <a href="../">goguma</a> ·
+      <a href="https://github.com/junnam586/goguma">Source</a> ·
+      <a href="https://github.com/junnam586/goguma/releases">Releases</a> ·
+      <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+      <!-- This page is the one that collects an email address, so the page
+           saying what happens to it has to be reachable from here. -->
+      <a href="../blog/">Writing</a> ·
+      <a href="../privacy/">Privacy</a>
+    </p>
+    <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+  </footer>
+</div>
+
+<script>
+/*
+The browser already refuses an empty field and anything with no `@`, because the
+input is `type=email` and `required`. This is for what that check lets through,
+which is the part that actually costs a subscriber:
+
+  you@localhost   a valid address that no mail server on the internet can reach
+  you@gmial.com   a real-looking address at a domain that isn't theirs
+
+Neither can be settled by looking harder at the string. Proving an address
+exists means mailing it and waiting for a click, which is the confirmation step
+this list deliberately doesn't have. So the first is refused outright, and the
+second is offered as a correction the reader can take or ignore, because a page
+has no business being certain about somebody else's address.
+*/
+(function () {
+  var form = document.getElementById('signup');
+  var input = form.querySelector('input[type=email]');
+  var note = form.parentNode.querySelector('.close-alt');
+  var idle = note.textContent;
+
+  function say(text, warn) {
+    note.className = warn ? 'close-alt warn' : 'close-alt';
+    note.textContent = text;
+    return note;
+  }
+
+  // A form with no endpoint must say so rather than reloading and appearing to
+  // have worked. Silently eating an address is the one failure a signup page
+  // cannot have.
+  if (!form.getAttribute('action')) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      say('signup is not connected yet, nothing was sent', true);
+      form.querySelector('button').disabled = true;
+    });
+    return;
+  }
+
+  // A dot, and at least two letters after the last one. `type=email` accepts
+  // `you@localhost` and `you@gmail.c`, which are addresses on somebody's own
+  // network rather than addresses this list can ever deliver to.
+  var SHAPE = /^[^\s@]+@([^\s@.]+\.)+[a-z]{2,}$/i;
+
+  // Domains common enough that a near miss is a typo rather than a small host
+  // nobody here has heard of. The list is deliberately short and consumer-only:
+  // a wrong suggestion on somebody's company address is worse than none, and
+  // every name on it has a distinctive enough spelling that one edit away is
+  // almost always a slip rather than a different real domain.
+  //
+  // `mail.com` earns its place by being a real provider one character from
+  // `gmail.com`. Without it here, every one of its subscribers was told to
+  // correct an address that was already right. Listing a domain does both jobs
+  // at once: it is never suggested against, and it becomes something a typo can
+  // be suggested towards.
+  var KNOWN = ['gmail.com', 'googlemail.com', 'yahoo.com', 'hotmail.com',
+               'outlook.com', 'icloud.com', 'protonmail.com', 'comcast.net',
+               'mail.com'];
+
+  // Edit distance counting a swap of two neighbours as one edit, not two.
+  //
+  // That last part is the whole reason this is not the three-line version.
+  // Plain Levenshtein puts `gmial.com` two edits from `gmail.com`, because a
+  // swap reads to it as a delete plus an insert, so the commonest typo anyone
+  // makes is exactly the one a distance-of-one check walks straight past.
+  // Same for `hotmial.com`. Both were caught by a test rather than by reading.
+  function distance(a, b) {
+    var d = [], i, j, cost;
+    for (i = 0; i <= a.length; i++) d[i] = [i];
+    for (j = 0; j <= b.length; j++) d[0][j] = j;
+    for (i = 1; i <= a.length; i++) {
+      for (j = 1; j <= b.length; j++) {
+        cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 &&
+            a.charAt(i - 1) === b.charAt(j - 2) &&
+            a.charAt(i - 2) === b.charAt(j - 1)) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  function suggest(addr) {
+    var at = addr.lastIndexOf('@');
+    var domain = addr.slice(at + 1).toLowerCase();
+    // Short domains are skipped rather than judged one by one: everything above
+    // is nine characters or more, and one edit away from a five character domain
+    // is half the internet.
+    if (domain.length < 8) return null;
+    if (KNOWN.indexOf(domain) !== -1) return null;
+    for (var i = 0; i < KNOWN.length; i++) {
+      if (distance(domain, KNOWN[i]) === 1) return addr.slice(0, at + 1) + KNOWN[i];
+    }
+    return null;
+  }
+
+  // Cleared on every keystroke, so a correction offered for one address is never
+  // still standing when a different one is submitted.
+  var typoSeen = false;
+  input.addEventListener('input', function () {
+    typoSeen = false;
+    say(idle, false);
+  });
+
+  form.addEventListener('submit', function (e) {
+    // A pasted address usually arrives with a space on one end of it.
+    input.value = input.value.trim();
+    var addr = input.value;
+
+    if (!SHAPE.test(addr)) {
+      e.preventDefault();
+      say('that needs a domain that can receive mail, like you@example.com', true);
+      input.focus();
+      return;
+    }
+
+    var fix = typoSeen ? null : suggest(addr);
+    if (fix) {
+      // Offered once, never enforced. A second submit sends exactly what was
+      // typed, because the reader knows their own address and this doesn't.
+      e.preventDefault();
+      typoSeen = true;
+      var line = say('did you mean ', true);
+      var link = document.createElement('a');
+      link.href = '#';
+      link.textContent = fix;
+      link.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        input.value = fix;
+        typoSeen = true;
+        say('submitted, the confirmation is in the new tab', false);
+        // Programmatic submit skips this handler, which is what we want: the
+        // address has already been through it. The form's target is respected,
+        // and a click is a user gesture, so the new tab is not blocked.
+        form.submit();
+      });
+      line.appendChild(link);
+      line.appendChild(document.createTextNode('? submit again to send it as typed'));
+      return;
+    }
+
+    say('submitted, the confirmation is in the new tab', false);
+  });
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1185 @@
+# goguma · writing
+
+> Every article from https://getgoguma.com/blog/, in full.
+> The index and project overview are at https://getgoguma.com/llms.txt
+
+---
+
+# Why your Mac's cron jobs don't run while it's asleep
+
+URL: https://getgoguma.com/blog/cron-jobs-dont-run-mac-asleep/
+
+A sleeping Mac does not queue the cron jobs it missed and catch up on wake. It skips them outright, writes no error, and retries nothing — so the failure is silent, and most people find out weeks later. launchd is the exception: it re-fires a missed `StartCalendarInterval` job when the machine wakes.
+
+## What actually happens
+
+cron is a loop. It wakes roughly once a minute, compares the current time against every line in every crontab, and runs whatever matches. That design has one consequence that matters enormously on a laptop and not at all on a server: **a minute that does not happen is a minute that is never evaluated.**
+
+When your Mac sleeps at 23:40 and wakes at 08:15, the minutes in between do not exist as far as cron is concerned. It does not later notice that `0 3 * * *` should have fired. There is no backlog, because there is no record that anything was due.
+
+The important part is what does *not* happen next:
+
+- Nothing fails, so nothing appears in a log
+- Nothing retries, because nothing knows it was missed
+- No mail is sent, because cron only mails you the output of jobs that actually ran
+- Your job's own error handling never runs, because your job never started
+
+This is why the failure mode is so hard to catch. A crashed job leaves a stack trace. A job that never started leaves nothing at all. The symptom is not an error — it is the gradual realisation, weeks later, that a digest has been arriving on some days and not others.
+
+## launchd is genuinely different, and this is the part people get wrong
+
+macOS prefers launchd, and launchd handles this case. From `launchd.plist(5)`, the man page on your own machine:
+
+> Unlike cron which skips job invocations when the computer is asleep, launchd will start the job the next time the computer wakes up. If multiple intervals transpire before the computer is woken, those events will be coalesced into one event upon wake from sleep.
+
+So a `StartCalendarInterval` job whose fire time passed during sleep runs **once**, on wake. Two caveats that matter:
+
+- **Once, not once per occurrence.** A job scheduled hourly that slept through nine fire times runs a single time on wake, not nine times.
+- **Only sleep, not shutdown.** If the Mac was powered off, launchd has nothing to catch up from.
+
+This distinction is the single most useful thing to know here, and it cuts both ways. If your job is a `StartCalendarInterval` LaunchAgent and running late is fine — an updater, a sync, an index rebuild — you already have the behaviour you want and should change nothing.
+
+If your job is in crontab, or if running eight hours late is the same as not running (a report that has to be in someone's inbox by 08:00, a backup that must finish before you leave the house), then the sleep is a real problem.
+
+## Why the usual advice doesn't fix it
+
+**"Just use launchd."** Good advice when late is acceptable. It does not help when the point is that the job runs *at* 03:00, and it means rewriting schedules that already work.
+
+**"Just schedule it during the day."** This assumes your Mac is awake during the day. A closed laptop is asleep at 14:00 exactly as much as at 03:00. The lid, not the hour, is what decides.
+
+**"Just use caffeinate."** caffeinate [stops a Mac falling asleep](../keep-mac-awake-terminal-command/). It cannot wake one that already is. To use it for a 03:00 job you have to prevent sleep from the moment you stop working until the job finishes — that is a full night of a machine running at desk power to do ninety seconds of work. It also [does not survive the lid closing](../caffeinate-lid-closed/).
+
+**"Just leave it plugged in."** Mains power changes when a Mac sleeps, not whether. It still sleeps.
+
+## What actually works
+
+There is only one mechanism on macOS that makes a sleeping machine wake at a chosen time, and it is `pmset schedule`. The full method — computing the wake time, arming it, holding sleep off long enough for the job to finish, and re-arming for next time — is in [how to wake a Mac for a scheduled job](../wake-mac-for-scheduled-job-pmset/).
+
+The short version:
+
+```sh
+sudo pmset schedule wake "08/21/2026 02:58:30"
+```
+
+That wakes the machine at 02:58:30 so a 03:00 job has a machine to run on. You then need it to stay awake long enough for the job to finish, and you need to arm the next one after it fires, because a scheduled wake is consumed when it happens.
+
+## Working out what you have already missed
+
+You cannot ask cron, because cron kept no record. What you can do is reconstruct it: take each job's schedule, replay it against the machine's sleep and wake history, and count the fire times that fell inside a sleep interval.
+
+macOS keeps that history. `pmset -g log` includes every sleep and wake with [a timestamp and a reason](../what-woke-my-mac/), going back days. Replaying a cron expression against those intervals gives you the number nobody has: how many times each job has silently not run.
+
+That is what [finding your silently missed jobs](../find-missed-scheduled-jobs-mac/) covers.
+
+
+---
+
+# How to wake a Mac for a scheduled job with pmset
+
+URL: https://getgoguma.com/blog/wake-mac-for-scheduled-job-pmset/
+
+`sudo pmset schedule wake "MM/dd/yyyy HH:mm:ss"` wakes a sleeping Mac at a chosen time. It is the only mechanism macOS offers for this. The parts nobody mentions are that a scheduled wake is **consumed** when it fires, that the machine will go straight back to sleep unless something holds it, and that the wake schedule is shared with macOS's own entries, so the only blunt way to clear a stale one takes theirs out too.
+
+## The command
+
+```sh
+sudo pmset schedule wake "08/21/2026 02:58:30"
+```
+
+The format is `MM/dd/yyyy HH:mm:ss`, 24-hour, seconds required. To see what is armed:
+
+```sh
+pmset -g sched
+```
+
+And to remove it:
+
+```sh
+sudo pmset schedule cancel wake "08/21/2026 02:58:30"
+```
+
+Note that cancelling requires the *exact* time you scheduled. This is the first thing that trips people up: a stale entry you can no longer remember the timestamp of has to be cleared with `pmset schedule cancelall`, which takes out everything, including any wake macOS itself arranged.
+
+## Why waking is only half of it
+
+A Mac that wakes with nothing to do goes back to sleep. The scheduled wake gets you a machine that is powered up at 02:58:30; it does not get you a machine that is still powered up at 03:00:45 when your backup is halfway through writing a tarball.
+
+So the real recipe is two things, not one:
+
+```sh
+# arm the wake, 90 seconds before the job is due
+sudo pmset schedule wake "08/21/2026 02:58:30"
+
+# and in the job itself, hold sleep off while it runs
+caffeinate -s /usr/local/bin/nightly-backup
+```
+
+`caffeinate -s` prevents system sleep for the lifetime of the command it wraps and releases when the command exits, which is the correct shape: the hold lasts exactly as long as the work.
+
+With the lid open, on mains, that combination works. There are four ways it comes apart.
+
+## The four things that go wrong
+
+### 1. The wake is consumed
+
+A one-shot scheduled wake fires once and is gone. Tomorrow's 03:00 job has no wake armed for it unless something armed one. For a recurring job this means the job itself has to schedule its own next wake as its last act — and if a run fails before reaching that line, the chain is broken silently and permanently.
+
+`pmset repeat` exists for recurring events, but `pmset(1)` is explicit about its limit: *"you may only have one pair of repeating events scheduled — a 'power on' event and a 'power off' event."* One pair, for the whole machine. Two jobs on different schedules cannot both use it, and neither can you and macOS.
+
+### 2. The schedule is shared with the rest of the system
+
+Multiple wakes do coexist — they are tagged by owner, and a normal Mac has several at any moment. Here is a real `pmset -g sched`:
+
+```
+[0]  wake at 08/20/2026 13:39:40 by 'goguma'
+[1]  wake at 08/20/2026 16:58:29 by 'com.apple.alarm...travelEngine.periodicRefreshTimer'
+[2]  wake at 08/21/2026 00:00:00 by 'com.apple.alarm...ScheduleLifetimeMonitor.timer'
+[3]  wake at 08/21/2026 01:43:49 by 'com.apple.alarm...acmd.alarm'
+```
+
+The hazard is not collision, it is **cleanup**. Cancelling requires the exact type and timestamp you scheduled, so a stale entry whose time you no longer remember cannot be removed individually. The blunt instrument is `pmset schedule cancelall`, which takes out **everything** — including the three Apple entries above, which the system put there for its own reasons and will not necessarily replace.
+
+### 3. caffeinate does not survive the lid closing
+
+This is the big one for laptops. `caffeinate` asserts against *idle* sleep. Closing the lid triggers clamshell sleep, a lower-level path that the assertion does not touch. On a closed MacBook with no external display and no mains power, the machine sleeps and takes your job with it. Covered properly in [why caffeinate doesn't work with the lid closed](../caffeinate-lid-closed/).
+
+The mechanism that does hold a closed lid awake is [`sudo pmset -a disablesleep 1`](../pmset-disablesleep/) — and that one has [its own serious problem](../caffeinate-vs-pmset-vs-amphetamine/): it is a global setting that persists in the power management preferences and is **not** cleared when the process that set it dies. Anything that sets it and is then killed leaves a Mac that cannot sleep at all until someone notices.
+
+### 4. Waking a flat battery is worse than not waking
+
+This is the one almost nobody accounts for, and it is worth thinking through carefully.
+
+Suppose your Mac is on battery at 11% and a job is due at 03:00. You wake it. The wake itself costs charge. The job runs, costs more. If you have a safety cutoff that releases the hold at 10%, it fires almost immediately — so you have spent energy on a wake, not completed the job, and arrived closer to a hard shutdown than if you had done nothing at all.
+
+**A safety cutoff cannot un-wake a machine.** By the time it fires, the energy is already spent. Which means the check has to happen *before* the wake is armed, not after it fires — and the margin should be the job's own measured cost, not a flat number. Refusing to wake at 24% for a job that has historically used 0.5% of the battery protects nobody from anything.
+
+## What this looks like automated
+
+Doing all of the above by hand, per job, and keeping it correct as schedules change, is more work than most jobs are worth. Automated, the pieces are:
+
+- Read the jobs already on the machine — crontab, launchd, whatever else — rather than asking you to redeclare them
+- Compute the next fire time and arm a wake **90 seconds** before it, which is enough for the machine to be up and settled
+- Hold sleep off from the wake until the job exits, using a mechanism that survives a closed lid
+- Learn how long each job actually takes, so the hold fits the work instead of a guess
+- Skip launchd's `StartCalendarInterval` jobs, which [re-fire on wake by themselves](../launchd-vs-cron-sleep/) and need no help
+- Re-arm after every fire, so the chain never depends on a job succeeding
+- Refuse the wake when the battery cannot afford it, using that job's own measured drain as the margin
+- Release everything if a closed-lid machine gets hot or the charge falls
+
+That list is what [goguma](../../) is. Each item is small; the reason to use a tool is that all eight have to be right at once, forever, and a mistake in any of them is silent.
+
+
+---
+
+# How to find which of your scheduled jobs your Mac has been missing
+
+URL: https://getgoguma.com/blog/find-missed-scheduled-jobs-mac/
+
+There is no log of a job that never ran, so you cannot look it up. You reconstruct it: read the sleep and wake intervals out of `pmset -g log`, replay each job's schedule against them, and count the fire times that landed inside a sleep. That count is the number nobody has and everybody wants.
+
+## Why you have to reconstruct it
+
+A job that ran and failed leaves evidence — a non-zero exit code, output, a mail. A job that never started leaves nothing. cron did not error, because cron did not do anything. Your job's own logging never ran, because your job never ran.
+
+So the question "which of my jobs have been missed?" cannot be answered by looking. It has to be computed, from two things you do have: what each job's schedule says, and when the machine was actually asleep.
+
+## Step 1: get the sleep history
+
+macOS records every sleep and wake:
+
+```sh
+pmset -g log | grep -E "Entering Sleep|Wake from"
+```
+
+You get lines with a timestamp and a reason — `Entering Sleep state due to 'Clamshell Sleep'`, `Wake from Standby due to EC.LidOpen`. Pair each sleep with the next wake and you have the intervals during which nothing could have run.
+
+This is a rolling buffer, so it covers recent days to a couple of weeks rather than all history. That is usually enough: if a job is being missed, it is being missed repeatedly.
+
+For a quick view of just the transitions:
+
+```sh
+pmset -g log | awk '/Entering Sleep|Wake from/ {print $1, $2, $4, $5, $6}'
+```
+
+## Step 2: list what is actually scheduled
+
+Three places, and most people forget the third.
+
+```sh
+crontab -l                                    # your crontab
+ls ~/Library/LaunchAgents /Library/LaunchAgents /Library/LaunchDaemons
+```
+
+The third is **application-level schedulers** — tools that keep their own job store and fire jobs from their own process. These appear in neither `crontab -l` nor `launchctl list`, because the OS is not involved at all. If one of those is where your real automation lives, an OS-only audit reports "nothing scheduled here" while every job you care about sits in a file it never looked at.
+
+## Step 3: replay the schedule against the sleeps
+
+For each job, expand its schedule into the fire times it should have had over the window, then check each one against the sleep intervals.
+
+A cron expression like `0 3 * * *` over a fourteen-day window is fourteen fire times. If the machine was asleep across 03:00 on eleven of those days, that job has silently not run eleven times.
+
+The arithmetic is simple; doing it for every job by hand is not, which is why almost nobody does it and why the misses accumulate unnoticed for months.
+
+## What to do with the answer
+
+The count sorts your jobs into three groups, and each wants something different.
+
+**Missed often, and it matters.** These need a [scheduled wake](../wake-mac-for-scheduled-job-pmset/). This is the group the whole exercise exists to find.
+
+**Missed often, and it does not matter.** A cache cleanup that runs at 04:00 and would be just as useful at 09:00. Move it to a launchd `StartCalendarInterval`, which [re-fires on wake by itself](../launchd-vs-cron-sleep/), and stop thinking about it.
+
+**Never missed.** It fires during hours the machine is reliably awake. Leave it alone. Waking a Mac for a job that was never in trouble is a cost with no benefit.
+
+That last group matters more than it looks. The temptation after an audit is to put a wake in front of everything. Most jobs do not need one, and every unnecessary wake is battery spent for nothing.
+
+## One subtlety about "asleep"
+
+A Mac is not simply awake or asleep. Overnight it cycles through [brief dark wakes](../dark-wake-power-nap/) — powering up for a few seconds to fetch mail or run maintenance, then going back down. A fire time that lands inside one of those windows *might* have run.
+
+Treat dark wake as sleep for auditing purposes. It is short, it is not scheduled around your job, and relying on your 03:00 job coinciding with a dark wake is not a strategy. If you are counting misses, counting a dark-wake coincidence as a hit will flatter the numbers and hide the problem.
+
+## Doing it automatically
+
+This is the first thing goguma does when you install it. It reads your crontab, your user and system launchd jobs, and application-level schedulers it knows about, replays each schedule against the machine's own sleep history, and reports which have been missing runs and how often — before you configure anything.
+
+It also skips the launchd calendar jobs, because those already handle themselves, and it records what each job costs in battery so you can see which are worth waking for.
+
+
+---
+
+# launchd vs cron on macOS — which one survives sleep
+
+URL: https://getgoguma.com/blog/launchd-vs-cron-sleep/
+
+**launchd re-fires a missed `StartCalendarInterval` job once when the Mac wakes. cron does not — it skips the occurrence entirely and records nothing.** So the same schedule, expressed two ways, has completely different behaviour on a laptop. If running late is acceptable, launchd already solves this. If the job has to run *at* its time, neither does.
+
+## The difference in one table
+
+| | cron | launchd `StartCalendarInterval` | launchd `StartInterval` |
+|---|---|---|---|
+| Missed while asleep | **skipped silently** | **runs once on wake** | interval restarts |
+| Missed while powered off | skipped | skipped | interval restarts |
+| Runs once per missed occurrence | — | no, once total | no |
+| Records that it was missed | no | no | no |
+| Runs at the exact scheduled time | only if awake | only if awake | approximately |
+
+Both of those rows are stated outright in `launchd.plist(5)` — the man page on your own machine, which is worth reading before trusting any blog post about this, including this one:
+
+> Unlike cron which skips job invocations when the computer is asleep, launchd will start the job the next time the computer wakes up. If multiple intervals transpire before the computer is woken, those events will be coalesced into one event upon wake from sleep.
+
+That second sentence is the source for "once, not once per occurrence" below.
+
+## Why cron behaves this way
+
+cron is a loop over wall-clock minutes. Each minute it wakes, compares now against every crontab line, runs the matches, and sleeps again. A minute that does not happen — because the machine was asleep — is never compared against anything.
+
+There is no queue, so there is nothing to drain on wake. There is no record, because a job that never started produced no output, no exit code, and no mail. From cron's point of view nothing went wrong, which is precisely why the failure is invisible for weeks.
+
+## Why launchd behaves differently
+
+launchd holds a calendar entry as a description of *when a thing should have happened*, not as a minute to match. On wake it can see that a fire time has passed and act on it.
+
+Two limits worth stating precisely, because both catch people:
+
+**Once, not once per occurrence.** A job scheduled `every hour` that slept through nine fire times runs **one** time on wake, not nine. If your job is idempotent this is exactly what you want. If each run processes a queue or produces a dated artefact, you have eight missing artefacts and one confusing catch-up run.
+
+**Sleep only, not shutdown.** Powered off, launchd is not running and has nothing to reconcile.
+
+## `StartInterval` is a third behaviour
+
+`StartInterval` — every N seconds — is neither of the above. It counts elapsed time, and sleep does not count. Set a job to run every 3600 seconds, sleep for eight hours, and on wake you do not get eight catch-up runs; you get one run and the timer restarts.
+
+This is usually the desired behaviour for a poller, and it is a genuine reason to prefer `StartInterval` over `StartCalendarInterval` when the exact time does not matter.
+
+## Which to use
+
+**Use launchd `StartCalendarInterval` when late is fine.** Updaters, syncs, backups that only need to happen daily, index rebuilds, cleanup. The catch-up is free and correct, and you should not put a scheduled wake in front of it — waking a laptop at 03:00 for a job that would have run perfectly well at 08:15 is a pure waste of battery.
+
+**Use cron when you like cron.** The syntax is more compact, it is portable, and for a machine that is awake it is fine. Just know that on a laptop each expression is also a silent-failure surface.
+
+**Neither solves "must run at 03:00".** A report someone expects at 08:00, a backup that has to finish before you leave, anything with a downstream consumer — launchd's catch-up gives you the job at 08:15 when you open the lid, which for these is the same as not running. That needs a [scheduled wake](../wake-mac-for-scheduled-job-pmset/).
+
+## The practical consequence for tooling
+
+Any tool that wakes a Mac for scheduled jobs has to know this distinction, or it does real harm. Waking at 03:00 for a `StartCalendarInterval` job that would have self-healed on wake costs battery to achieve nothing.
+
+goguma marks those jobs **self-healing** and leaves them alone: it adopts them so you can see them, reports them as needing no wake, and arms nothing. The jobs it does wake for are the ones that genuinely lose a run — crontab entries, and schedulers that run inside their own process rather than through the OS.
+
+If you are auditing this by hand, the rule is: for each job, ask whether a run eight hours late is a run or a miss. That answer, not the schedule syntax, decides whether sleep is a problem.
+
+## Finding out what you actually have
+
+Most machines have both, plus a few things that are neither. `crontab -l` shows one. `launchctl list` shows another. Application-level schedulers — anything that keeps its own job store and runs it from its own process — show up in neither, which is [how jobs go missing without anyone noticing](../find-missed-scheduled-jobs-mac/).
+
+
+---
+
+# caffeinate vs pmset vs Amphetamine — what each one actually does
+
+URL: https://getgoguma.com/blog/caffeinate-vs-pmset-vs-amphetamine/
+
+`caffeinate` asserts against idle sleep for the life of a command and releases automatically — but a closed lid defeats it. `pmset -a disablesleep 1` does hold a closed lid awake, but it is a global setting that **persists after the process that set it dies**. Amphetamine is a GUI wrapper with triggers and timers that has to be turned off manually. None of the three can wake a Mac that is already asleep.
+
+## The one-line version
+
+| | holds idle sleep | holds a closed lid | releases by itself | can wake a sleeping Mac |
+|---|---|---|---|---|
+| `caffeinate` | yes | **no** | yes, when the command exits | no |
+| `pmset -a disablesleep 1` | yes | yes | **no** | no |
+| Amphetamine | yes | yes | on a timer or trigger you set | no |
+| `pmset schedule wake` | — | — | — | **yes** |
+
+The last row is the one worth staring at. The first three are the same category of thing — stop an awake machine sleeping — and people compare them as though the category covered the whole problem. It does not. If your Mac is already asleep at 02:59 and a job is due at 03:00, none of the first three help at all.
+
+## caffeinate
+
+Built into macOS. It creates a power assertion and holds it for a duration or [for the lifetime of a command](../keep-mac-awake-terminal-command/):
+
+```sh
+caffeinate -s /usr/local/bin/nightly-backup   # until the command exits
+caffeinate -t 3600                            # for an hour
+caffeinate -w 4821                            # until PID 4821 exits
+```
+
+The `-s` form is the right shape for a job: the hold lasts exactly as long as the work and is released by the kernel when the process ends, including if it crashes or is killed. There is no state to clean up.
+
+**Its limit is the lid.** A power assertion is a request not to go to *idle* sleep. Closing the lid takes a different, lower-level path. On a MacBook with no external display and no mains power, the lid closing puts the machine to sleep and your caffeinated job stops mid-run. This surprises people constantly, because the tool did nothing wrong — it is doing exactly what it says, and what it says is narrower than what people assume.
+
+## pmset -a disablesleep 1
+
+This is the blunt instrument, and it does work with the lid closed:
+
+```sh
+sudo pmset -a disablesleep 1    # the Mac now cannot sleep, at all
+sudo pmset -a disablesleep 0    # back to normal
+```
+
+Two things make it dangerous in a way `caffeinate` is not.
+
+**It is global.** There is no scoping to a process, a duration, or a reason. The Mac cannot sleep. Not idle sleep, not lid sleep, not low-power sleep. Everything.
+
+**It persists.** This is the part that catches people. `disablesleep` is written into the power management preferences. It is **not** cleared when the process that set it exits, crashes, or is force-killed. A script that sets it and dies before its cleanup line leaves a Mac that will never sleep again until a human notices and runs `pmset` by hand — and the symptom is a laptop that arrives somewhere with a flat battery and a warm chassis, hours later, with nothing to point at the cause.
+
+Any tool built on [`disablesleep`](../pmset-disablesleep/) therefore needs a dead-man switch: something that notices the owner is gone and clears the setting. goguma's privileged helper clears a stranded block after 60 seconds without contact from the daemon, for exactly this reason.
+
+## Amphetamine
+
+A well-made free menu bar app with a real feature set: triggers on app launch, on connecting a specific drive, on an audio device being active, plus timers and session control. If you want "keep the Mac awake whenever Logic is open", it is the tool.
+
+Its shape is the same as the others though: it holds an awake machine awake, and **you have to remember to turn it off.** The triggers reduce how often you have to, but the failure mode is unchanged — a session left on, a laptop in a bag, a flat battery. That is the single most common complaint about every tool in this category, and it is a design consequence rather than a bug.
+
+## What the comparison misses entirely
+
+All three answer "how do I stop my Mac sleeping". Most people arriving at that question actually have one of two different problems:
+
+**"My scheduled job didn't run."** The machine was asleep when it was due. Keeping it awake from now until then is the wrong shape — you would be running a laptop at desk power all night to do ninety seconds of work at 03:00. What you want is for it to *wake* for the job and sleep again afterwards, which needs [`pmset schedule`](../wake-mac-for-scheduled-job-pmset/), a different mechanism from all three above.
+
+**"My agent stopped when I closed the lid."** Here you do want a hold, and it does have to survive the lid, so `disablesleep` is the right mechanism. But it should be scoped to the work rather than left on, and you cannot tell when the work is happening by [watching the process](../cannot-detect-ai-agent-working/) — the agent has to report it.
+
+## Choosing
+
+- **Wrapping one command, lid open** — `caffeinate -s`. Built in, correct, self-releasing.
+- **A GUI toggle with triggers** — Amphetamine, or the free alternatives in [Amphetamine alternatives](../amphetamine-alternatives-mac/).
+- **Lid closed, no external display** — you need `disablesleep`, so use something that manages it with an automatic release rather than setting it by hand.
+- **A job that fires while the Mac is asleep** — none of them. You need a scheduled wake.
+
+
+---
+
+# Why caffeinate doesn't work when you close the lid
+
+URL: https://getgoguma.com/blog/caffeinate-lid-closed/
+
+`caffeinate` creates a power assertion against **idle** sleep. Closing the lid triggers clamshell sleep, a separate and lower-level path that the assertion does not cover, so a MacBook with no external display and no mains power sleeps anyway. The only mechanism that holds a closed lid awake is `pmset -a disablesleep 1`.
+
+## Two different sleeps
+
+macOS does not have one sleep. The two that matter here are:
+
+**Idle sleep.** Nothing has happened for a while, so the machine powers down. This is what the Energy Saver timeout controls, and it is what power assertions are for. `caffeinate` takes an assertion — `PreventUserIdleSystemSleep` — that tells the kernel "not yet, something is happening".
+
+**Clamshell sleep.** The lid closed. This is not a timeout being reached; it is a hardware event with its own handling, and on a laptop it is meant to be unconditional. A machine you put in a bag should sleep.
+
+`caffeinate` speaks to the first one. It has nothing to say about the second. When you close the lid, the assertion is still perfectly valid and perfectly held — and the machine sleeps anyway, because it was never the thing being asked.
+
+This is why the failure feels like a bug. The tool is working. The scope is just narrower than the name suggests.
+
+## The exception that confuses everyone
+
+Close the lid on a MacBook that has an external display and mains power attached and it stays awake. That is **clamshell mode**, and it is macOS deciding the lid is irrelevant because you are clearly using the machine at a desk.
+
+People then conclude that closing the lid is fine and caffeinate is holding it. Unplug at a café and the same setup dies within seconds. The display and the power adapter were doing the work.
+
+The conditions vary by model, but the general shape on Apple silicon is: external display **and** mains power. Battery alone, with no display, sleeps — [the ways around that are their own subject](../keep-macbook-awake-lid-closed/).
+
+## What actually holds it
+
+One supported mechanism:
+
+```sh
+sudo pmset -a disablesleep 1
+```
+
+This does hold a closed lid awake on battery with no display. It is also global, unscoped, and — the part that matters — **persistent**. It is written into the power management preferences and is not cleared when whatever set it exits. Kill the script before its cleanup line and the Mac cannot sleep again until someone works out why.
+
+So anything using it responsibly needs three things: it should be set only while work is actually happening, it should be released the moment the work ends, and something independent should clear it if the thing that set it disappears.
+
+## The routes that don't work, tested
+
+It is worth recording the dead ends, because they look plausible and cost a day each.
+
+**Private in-process APIs.** There is a private `RootDomainUserClient` selector 12, `setClamShellSleepDisable`, which reads like exactly the right thing. Verified on-device on **macOS 26.3**: it returns success and the Mac still sleeps. It governs the external-display clamshell path, not lid close with no display attached. This finding is [Adrafinil's](https://github.com/kageroumado), whose team tested it and published the result; goguma cites it in its own source rather than repeating the experiment.
+
+**More caffeinate flags.** `-d` (display), `-i` (idle), `-m` (disk), `-u` (user active). All of these are narrower assertions, not broader ones. None reaches the clamshell path.
+
+**IOKit assertions directly.** `IOPMAssertionCreateWithName` with `kIOPMAssertionTypePreventUserIdleSystemSleep` is what caffeinate itself uses. Calling it yourself gets you caffeinate's behaviour, including its limit.
+
+**A dummy HDMI plug.** This genuinely works — it makes macOS believe a display is attached, enabling clamshell mode. It is a hardware fix for a software problem, needs mains power on most models, and does not travel well in a bag.
+
+## The thing to be careful about
+
+A closed MacBook that cannot sleep is a sealed aluminium box with no airflow, and you cannot see that anything is wrong. That is genuinely the dangerous configuration, and it is worth reading [is it safe to keep a MacBook awake in a bag](../macbook-awake-in-bag-safe/) before leaving one running.
+
+The short version: whatever holds the lid awake should drop the hold if the machine gets hot or the battery falls, and it should only ever be held while work is actually happening.
+
+## If the real problem is a scheduled job
+
+If you came here because a job did not run overnight, holding sleep off is the wrong tool even once it works. You would be running a laptop all night to do a minute of work at 03:00. What you want is a machine that [wakes for the job and sleeps again afterwards](../wake-mac-for-scheduled-job-pmset/) — a different mechanism, and one none of the keep-awake tools offer.
+
+
+---
+
+# Amphetamine alternatives for macOS, compared honestly
+
+URL: https://getgoguma.com/blog/amphetamine-alternatives-mac/
+
+The free options worth knowing are **Caffeine**, **KeepingYouAwake**, **Clapet**, **Wide Awake**, **Clamshell** and **Adrafinil**. The two questions that actually separate them: does it hold a **closed lid** with no external display, and does it **release by itself**? Most hold an awake Mac awake and wait to be switched off. None of them, Amphetamine included, can wake a Mac that is already asleep.
+
+## The two questions that matter
+
+Feature lists in this category all look similar. Two things actually separate the tools:
+
+**Does it hold a closed lid?** With no external display and no mains power. Tools built on power assertions — the classic menu bar toggles — cannot, because [an assertion does not cover the clamshell sleep path](../caffeinate-lid-closed/). Only tools that reach for [`pmset disablesleep`](../pmset-disablesleep/) manage it.
+
+**Does it release by itself?** A toggle you have to remember to switch off has one predictable failure: a laptop that arrives somewhere flat and warm. Everything else is preference.
+
+## The comparison
+
+| | free | closed lid | releases by itself | safety cutoffs | wakes a sleeping Mac |
+|---|---|---|---|---|---|
+| **Amphetamine** | yes | yes | timers and triggers | no | no |
+| **Caffeine** | yes | no | no | no | no |
+| **KeepingYouAwake** | yes | no | optional timer | no | no |
+| **Clapet** | yes | yes | on lid open | no | no |
+| **Wide Awake** | yes | yes | no | **thermal, battery** | no |
+| **Clamshell** | freemium | **yes, its whole point** | no | no | no |
+| **Adrafinil** | yes, MIT | yes | **on agent activity** | thermal, battery | no |
+| **goguma** | yes, MIT | yes | **on job or agent activity** | thermal, battery | **yes** |
+| `caffeinate` | built in | no | yes, with the command | no | no |
+
+## The classic toggles
+
+**Amphetamine** is the most feature-complete and still the default recommendation for good reason: app-launch triggers, drive-based triggers, audio-activity triggers, session timers, per-session control. If you want "stay awake whenever Logic is open", nothing else matches it. Free, and the trigger system genuinely reduces how often you have to remember.
+
+**Caffeine** is the original and the simplest: one toggle, nothing else. It is assertion-based, so it does not hold a closed lid.
+
+**KeepingYouAwake** is Caffeine with a timer and an active project. Same assertion limit.
+
+**Clapet** is narrower and cleverer — it targets the lid specifically, keeping the Mac awake when you close it and letting it sleep when you open it again. Worth knowing if lid behaviour is the only thing you want to change.
+
+## The lid-closed specialists
+
+**Clamshell** exists for one job: keeping an Apple silicon MacBook awake with the lid shut and **no external display**, removing the dummy-plug requirement. If that is your entire problem, it is the most direct answer on the list.
+
+**Wide Awake** is notable for shipping a thermal and battery cutoff — it turns itself off before overheating. In a category where most tools will happily cook a laptop in a bag, that is a real distinction and it deserves more credit than it usually gets.
+
+## The agent-aware ones
+
+A newer group scopes the hold to *work happening* rather than a switch being on.
+
+**Adrafinil** (MIT, open source) detects agent activity through hooks it installs into Claude Code, Codex and others, holds sleep off with `pmset disablesleep` while they work, and releases when they stop. It has thermal and battery cutoffs and a chime when you close the lid. Its team also published the on-device finding that the private `setClamShellSleepDisable` API does not actually hold a displayless closed lid on macOS 26.3 — a genuinely useful negative result that saved everyone else the experiment.
+
+**goguma** (MIT, open source) overlaps on the agent half — hooks for Claude Code, Codex CLI, Cursor and Gemini CLI — but is built around a different problem: waking a Mac that is already asleep, for scheduled jobs it finds on your machine. Holds are leases that expire on their own rather than waiting to be released, and its privileged helper clears a stranded sleep block after 60 seconds without contact, because [`disablesleep` persists after the process that set it dies](../caffeinate-vs-pmset-vs-amphetamine/).
+
+## The thing none of them do
+
+Every tool above answers "stop my Mac sleeping". A large share of the people searching for them actually have the opposite problem: **the Mac was already asleep when something was due.**
+
+For that, keeping it awake is the wrong shape — you would run a laptop at desk power all night to do ninety seconds of work at 03:00. What you want is a machine that wakes for the job and sleeps again afterwards, which needs [`pmset schedule`](../wake-mac-for-scheduled-job-pmset/) rather than any assertion or toggle.
+
+That is the gap goguma is built for, and it is why it is on this list without really being in this category.
+
+## Choosing
+
+- **A toggle with good triggers** → Amphetamine, still.
+- **Simplest possible toggle** → KeepingYouAwake.
+- **Only care about lid behaviour** → Clapet, or Clamshell for the no-display case.
+- **Want a safety cutoff** → Wide Awake, Adrafinil or goguma.
+- **Keeping a coding agent alive with the lid shut** → Adrafinil or goguma; both scope the hold to the work.
+- **A scheduled job that fires while the Mac is asleep** → none of the toggles. You need a wake.
+- **Wrapping one command with the lid open** → `caffeinate -s`, already installed.
+
+
+---
+
+# You cannot tell whether an AI coding agent is working by watching it
+
+URL: https://getgoguma.com/blog/cannot-detect-ai-agent-working/
+
+An agent waiting on a model is a process blocked on a socket, and it looks exactly like one doing nothing. Measured across four live sessions over ten wall seconds, the **idle** session used 0.50s of CPU while the **actively working** one used 0.32s. The work is not happening on your machine, so there is nothing local to observe. The harness has to tell you.
+
+## The measurement
+
+Four coding agent sessions were running on one machine. Their CPU consumption was sampled over ten wall seconds, and one of them was known to be mid-task — actively editing files and running tests.
+
+| process | CPU used over 10s | state |
+|---|---|---|
+| 32126 | 0.32s | **actively working** |
+| 34832 | 0.25s | idle |
+| 77384 | 0.50s | idle |
+| 80257 | 0.05s | idle |
+
+The working session ranked **third of four**. The busiest process on the list was doing nothing.
+
+This is not a measurement error or an unlucky sample. It is what the architecture predicts. An agent's work happens on somebody else's GPUs. Locally, the process spends nearly all of its wall time blocked in a `read` on a socket, waiting for tokens to come back. Blocking on a socket costs no CPU. What little the process does spend goes on parsing the stream, redrawing a terminal, and running the occasional tool — bursty, brief, and easily beaten by an idle session that happens to be repainting a spinner.
+
+## Why the other signals fail too
+
+**Process presence.** The obvious approach — is `claude` running? — fails because the process is there for the entire session regardless. On the machine above, the four agent processes had been alive **between three and twenty-eight hours**, and were idle at a prompt for nearly all of it. Treating "the binary is running" as "work is happening" means holding a laptop awake all night because someone left a tab open.
+
+**Network traffic.** A streaming response is a slow trickle of bytes on one long-lived TLS connection. On a normal developer machine that is indistinguishable from an editor phoning home, a Dropbox sync, or a package manager checking for updates. Worse, it goes to zero *between* turns — the exact moment when a multi-step agent is about to start its next tool call and you still need the machine awake.
+
+**Window focus, or recent keystrokes.** These measure the human, not the agent. The entire point of a long agent run is that the human has walked away.
+
+**Child processes.** An agent running `npm test` does spawn something visible. But that is a fraction of the session, and the gaps between tool calls — waiting for the model to decide what to do next — are both invisible and precisely when sleep would kill the run.
+
+Every one of these has the same shape of failure: it either holds the machine awake when nothing is happening, or it lets the machine sleep while something is.
+
+## The consequence for tools in this space
+
+There are now several tools that keep a Mac awake for AI agents. It is worth knowing which of the two approaches each one takes, because it determines how they behave when you walk away.
+
+| approach | holds awake when | releases when |
+|---|---|---|
+| Process watching | the agent process exists | the process exits, or a CPU heuristic guesses idle |
+| Lifecycle hooks | the harness reports a turn started | the harness reports it finished, or the lease expires |
+
+Process watching is the more permissive of the two, and permissive is the wrong direction for something whose failure mode is a laptop that never sleeps. An agent sitting idle at a prompt overnight is a live process. A tool that watches processes holds sleep off for it.
+
+That is why some of them bolt a CPU-idle heuristic on top — and the table above is exactly why that heuristic cannot work.
+
+## What the harnesses actually give you
+
+Every major agent runs shell commands at its own lifecycle events. That is the harness telling you something no observer outside it could determine.
+
+| harness | config | events that mean "working" | event that means "finished" |
+|---|---|---|---|
+| Claude Code | `~/.claude/settings.json` | `UserPromptSubmit`, `PostToolUse` | `Stop` |
+| Codex CLI | `~/.codex/hooks.json` | `UserPromptSubmit`, `PostToolUse` | `Stop` |
+| Cursor | `~/.cursor/hooks.json` | `beforeSubmitPrompt`, `afterFileEdit` | `stop` |
+| Gemini CLI | `~/.gemini/settings.json` | `BeforeAgent`, `AfterTool` | `AfterAgent`, `SessionEnd` |
+
+Two traps in that table, both of which produce a tool that appears to work and does not.
+
+**The event names are not translations of each other.** Gemini CLI has `SessionStart` and `SessionEnd`, which look like the obvious pair to use. They are the *process* boundaries, not the *work* boundaries — `SessionStart` fires when the CLI launches, which for a session left open at an idle prompt means holding sleep off indefinitely. `BeforeAgent` and `AfterAgent` are the per-turn events, and those are the ones that correspond to Claude Code's `UserPromptSubmit` and `Stop`.
+
+**The config shapes differ.** Claude Code, Codex and Gemini CLI all nest as `hooks.<Event> = [{ hooks: [{type, command}] }]`. Cursor is flat, with a top-level `version: 1`. Writing one into the other's file produces a config the tool silently ignores — no error, no hook, and no way to tell from the outside that nothing is armed.
+
+## Hooks alone are not sufficient either
+
+A hook says "a turn started". Nothing guarantees the matching "it finished" ever arrives. The agent can crash, be killed, hit a network failure, or have its terminal closed. If the only thing that releases the hold is a stop event, a missed stop event means a Mac that never sleeps again — which is the failure people actually fear, and the reason they don't trust these tools.
+
+The fix is that the hold has to be a **lease**: it expires on its own unless something keeps renewing it. Then a missed stop event costs you a bounded amount of extra wakefulness rather than an unbounded one. goguma uses 15 minutes for an agent session, with a hard ceiling of 12 hours however often it is renewed, and its privileged helper clears a stranded sleep block after 60 seconds without contact from the daemon.
+
+That last one matters more than it sounds. `pmset disablesleep` is a global setting that persists in the power management preferences — it is **not** cleared when the process that set it dies. Anything that sets it and is then killed leaves a Mac that cannot sleep until a human notices and runs `pmset` by hand.
+
+## The summary
+
+You cannot observe agent work from outside the agent, because the work is not on your machine. Any tool claiming to detect it by watching is either watching process lifetime — which over-holds — or watching CPU, which the table at the top of this page shows does not distinguish the two states at all.
+
+The harness has to say so. And because the harness can fail to say so, whatever holds the machine awake has to expire by itself.
+
+
+---
+
+# Is it safe to keep a MacBook awake with the lid closed in a bag?
+
+URL: https://getgoguma.com/blog/macbook-awake-in-bag-safe/
+
+It is the one configuration where holding sleep off is genuinely risky — a sealed aluminium box with no airflow, and no way for you to see that anything is wrong. Two things have to be watched: temperature and charge. There is a trap in the first: on a Mac whose die sensors are unreadable, the fallback sensor reads **tens of degrees cooler**, so a bagged laptop can peg its silicon while every number stays under the limit.
+
+## Why lid-closed is the case that matters
+
+With the lid open, a Mac that is running hot or draining fast is *visible*. The fans are audible, the chassis is warm under your hands, the battery indicator is right there, and macOS can put a warning on the screen. Every normal protection assumes a person who can notice.
+
+Closed and in a bag, none of that holds. There is no display to warn you, no airflow, an insulating layer of fabric on all six sides, and you are not in the room. Whatever goes wrong goes wrong unobserved, for as long as it takes you to arrive somewhere.
+
+This is why a safety cutoff should be **gated on the lid being closed** rather than running all the time. With the lid open, a hot or draining machine is your problem to see and the system's protections are adequate. Closed, it is the tool's problem.
+
+## Risk one: heat
+
+A closed MacBook running a sustained workload is a sealed aluminium box. Apple silicon is efficient enough that light work is fine indefinitely — but a compile, a video export, or an agent hammering a test suite is not light work, and neither is a bag.
+
+macOS will protect the hardware eventually: it throttles hard, then sleeps or shuts down. But "eventually" means after sustained heat, and the point of a cutoff is to release the hold *before* that, so the machine can enter normal sleep rather than being forced there.
+
+### The sensor trap
+
+This is the part that makes naive thermal cutoffs useless, and it is worth knowing about even if you never write one.
+
+Reading CPU temperature on a Mac means reading SMC keys. The die sensors are the ones you want. On some machines those keys are unreadable — different silicon, different firmware, permissions — and code that falls back to a chassis-proximity sensor gets a number that is **tens of degrees cooler** than the die.
+
+So a bagged laptop can be thermally pegged while your reading sits comfortably under every threshold you set. The cutoff never fires. The number was always fine, and it was always measuring the wrong thing.
+
+Two consequences for anything doing this properly:
+
+**Also honour the OS's own thermal pressure warning**, independent of the degree reading. macOS knows its whole thermal state, including sensors you cannot read and pressure you cannot compute. When it says things are bad, that should fire the cutout regardless of what a single sensor reports.
+
+**An unreadable sensor is not "safe".** If the die keys cannot be read, the honest answer is that the valve is inoperative — and the user should be told that, rather than being left believing something is protecting them.
+
+## Risk two: charge
+
+Simpler, and only applies on battery. A closed machine held awake will keep discharging until it dies, and a hard shutdown at 0% is worse than sleeping at 10%: it is harder on the battery, it loses whatever was in flight, and it means the laptop is dead when you next open it.
+
+So on battery, with the lid closed, below some floor, everything should be released so the Mac can sleep normally with charge to spare. Around 10% is reasonable. On mains there is nothing to protect against and the check should not apply.
+
+## The asymmetry nobody accounts for
+
+There is a subtle failure here that matters if the tool also *wakes* your Mac rather than only holding it awake.
+
+**A cutoff cannot un-wake a machine.** By the time it fires, the wake has already happened and the energy is already spent. On a nearly flat battery the sequence is: wake, immediately trip the cutoff, release, sleep — having spent charge and not run the job. You end up closer to a hard shutdown than if nothing had happened at all.
+
+Which means the battery check has to run **before the wake is armed**, not only after it fires. Refusing the wake is strictly better: the machine stays asleep, the charge is preserved, and the job is missed exactly as it would have been anyway.
+
+And the margin should be the job's own measured cost, not a flat number. A blanket "don't wake below 25%" refuses far more than it needs to — most jobs are seconds of held-awake time and a fraction of a percent of battery. Refusing to wake at 24% for a 57-second sync protects nobody. Using what that specific job has actually drawn in the past means only genuinely expensive jobs push the floor up.
+
+## Practical advice
+
+If you are going to leave a Mac working with the lid shut:
+
+- **Hard surface, not a bag,** whenever you have the choice. A desk or a stand beats a rucksack by a wide margin.
+- **Mains power if you can.** It removes the battery risk completely and leaves only heat.
+- **Hold sleep off only while work is happening,** not as a permanent toggle. This is the single biggest difference between a safe setup and a flat battery — and it is why a hold should expire by itself rather than waiting to be switched off.
+- **Make sure something releases the hold if the tool dies.** [`pmset disablesleep` persists](../pmset-disablesleep/) after the process that set it is killed, so a crash can leave a Mac that cannot sleep at all.
+
+goguma applies both cutouts only with the lid closed, fires the thermal one on the OS warning as well as on the degree reading, refuses a wake the battery cannot afford using that job's own measured drain, and expires every hold on a timer so nothing depends on a clean shutdown.
+
+
+---
+
+# How to keep Claude Code or Codex running when you close the MacBook lid
+
+URL: https://getgoguma.com/blog/keep-coding-agent-running-lid-closed/
+
+Closing the lid triggers clamshell sleep, which `caffeinate` cannot hold — so the agent freezes mid-task. The only mechanism that holds a closed lid on battery is `sudo pmset -a disablesleep 1`, and using it by hand is risky because **it persists after the process that set it dies**. The safe shape is to have the hold scoped to actual agent activity and expiring on its own.
+
+## Why it happens
+
+`caffeinate`, and every menu bar toggle built the same way, asserts against **idle** sleep. Closing the lid is not an idle timeout — it is a hardware event on a separate path, and on a MacBook with no external display and no mains power it puts the machine to sleep unconditionally. The full explanation is in [why caffeinate doesn't work with the lid closed](../caffeinate-lid-closed/).
+
+The agent does not crash. It is suspended mid-token, and when you open the lid it resumes into a connection that timed out hours ago.
+
+## The three fixes, worst to best
+
+### 3. tmux or screen
+
+Commonly suggested, and it does not address this. tmux keeps a session alive when the *terminal* goes away. A sleeping Mac suspends every process on the machine, tmux included. It solves closing a window, not closing a lid.
+
+It is still worth using alongside a real fix, so a closed terminal does not kill a run.
+
+### 2. `pmset -a disablesleep 1` by hand
+
+```sh
+sudo pmset -a disablesleep 1     # before you walk away
+sudo pmset -a disablesleep 0     # when you come back
+```
+
+This genuinely works. Two problems.
+
+**Remembering the second line.** This is the classic flat-battery-in-a-bag story, and it is not a discipline problem — you set it expecting to be back in twenty minutes and then the day happens.
+
+**It persists past the thing that set it.** [`disablesleep`](../pmset-disablesleep/) is written into the power management preferences and is **not** cleared when the process that set it exits or is killed. A script that sets it and dies before its cleanup line leaves a Mac that cannot sleep at all until someone works out why. Anything automating this needs a dead-man switch — something independent that clears the setting when the owner disappears.
+
+### 1. Scope the hold to the work
+
+The right shape: the machine stays awake exactly while the agent is doing something, and sleeps normally when it is not. That needs an answer to "is it working right now?", and there is [a genuinely surprising result there](../cannot-detect-ai-agent-working/) — you cannot tell by watching.
+
+Measured across four live sessions over ten wall seconds, the **idle** one used 0.50s of CPU and the **actively working** one used 0.32s. The agent spends its time blocked on a socket waiting for a model; the work is not on your machine, so there is nothing local to observe.
+
+So the agent has to say so. All four major harnesses can:
+
+| harness | config file | fires while working | fires when finished |
+|---|---|---|---|
+| Claude Code | `~/.claude/settings.json` | `UserPromptSubmit`, `PostToolUse` | `Stop` |
+| Codex CLI | `~/.codex/hooks.json` | `UserPromptSubmit`, `PostToolUse` | `Stop` |
+| Cursor | `~/.cursor/hooks.json` | `beforeSubmitPrompt`, `afterFileEdit` | `stop` |
+| Gemini CLI | `~/.gemini/settings.json` | `BeforeAgent`, `AfterTool` | `AfterAgent`, `SessionEnd` |
+
+Two traps if you wire this yourself:
+
+**Gemini's `SessionStart`/`SessionEnd` are the wrong events.** They look like the obvious pair, but they are the *process* boundaries, not the *work* boundaries. `SessionStart` fires when the CLI launches — so a session left open at an idle prompt would hold sleep off indefinitely. `BeforeAgent` and `AfterAgent` are the per-turn events that correspond to Claude Code's `UserPromptSubmit` and `Stop`.
+
+**The config shapes differ.** Claude Code, Codex and Gemini CLI all nest as `hooks.<Event> = [{ hooks: [{type, command}] }]`. Cursor is flat with a top-level `version: 1`. Write one into the other's file and the tool silently ignores it — no error, no hook, no way to tell from outside that nothing is armed.
+
+## The part that is easy to get wrong
+
+A hook says "a turn started". Nothing guarantees the matching "it finished" arrives — the agent can crash, be killed, lose the network, or have its terminal closed. If only a stop event releases the hold, one missed event means a Mac that never sleeps again.
+
+So the hold has to be a **lease**: it expires unless something keeps renewing it. A missed stop event then costs a bounded amount of extra wakefulness instead of an unbounded one.
+
+goguma uses 15 minutes for an agent session, a hard ceiling of 12 hours however often it is renewed, and a helper that clears a stranded block after 60 seconds without contact. It also drops every hold if a closed-lid machine gets hot or the battery falls, which matters here more than anywhere — see [is it safe to keep a MacBook awake in a bag](../macbook-awake-in-bag-safe/).
+
+## For agents without hooks
+
+Anything you launch from a terminal can be wrapped, hooks or not:
+
+```sh
+goguma run -- aider --model sonnet
+goguma run -- opencode
+goguma run -- npm run build:prod
+```
+
+The hold opens when the command starts and closes when it exits. No integration, no plugin, no cooperation from the tool — which means it also works for whatever ships next month.
+
+This is deliberately not done by writing a shell alias into your `~/.zshrc`. An alias is a permanent edit to a file you own, it only catches shells that read that file, and it misses editor-launched sessions entirely. Wrapping the command you actually meant to wrap is smaller and needs no uninstall.
+
+## Before you walk away
+
+A closed MacBook that cannot sleep is a sealed box with no airflow and no way to signal you. Hard surface over bag, mains power if you have it, and make sure whatever is holding it awake will let go on its own.
+
+
+---
+
+# How to keep a MacBook awake with the lid closed
+
+URL: https://getgoguma.com/blog/keep-macbook-awake-lid-closed/
+
+Closing the lid puts a MacBook to sleep regardless of its energy settings. Apple's supported way to keep it running is clamshell mode, which requires power and an external display. Without a display, the only mechanism that holds a closed MacBook awake is `sudo pmset -a disablesleep 1` — a global switch that stays on until something sets it back, so it should always be paired with a way to turn it off.
+
+## The lid outranks everything
+
+Every sleep timer in System Settings answers one question: how long to wait after you stop using the machine. The lid is not a timer. Closing it is an instruction, and macOS obeys it regardless of what the timers say, what caffeinate is holding, and what any menu bar app has toggled. That is why [caffeinate does not survive the lid closing](../caffeinate-lid-closed/) — not because caffeinate is badly built, but because it holds off *idle* sleep, and lid sleep is not idle sleep.
+
+So "keep my MacBook awake with the lid closed" has exactly two honest answers, and they serve different situations.
+
+## The supported way: clamshell mode
+
+Connect the MacBook to power and an external display, and it keeps running with the lid closed, driving the external screen. This is Apple's intended closed-lid state and it needs no commands and no tools.
+
+Its limits are the plug and the display. This is a desk arrangement. It answers "I want the laptop closed under the monitor," not "I want the job to finish while the laptop is in my bag."
+
+## The way that works without a display
+
+One mechanism overrides lid sleep itself:
+
+```sh
+sudo pmset -a disablesleep 1
+```
+
+With that set, the machine does not sleep — lid open, lid closed, on battery, at all. Set it back with:
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
+Two things to understand before using it, both covered at length in [what disablesleep actually does](../pmset-disablesleep/):
+
+- **It is a global switch, not a lease.** It stays on until something sets it to 0. If the script that set it crashes, the switch stays set, and the machine will run its battery flat in the bag with nothing on screen to tell you.
+- **It is system-wide.** There is no "until this job finishes" scoping. You build that yourself, or you use a tool that does.
+
+## The part that is actually about safety
+
+A closed MacBook that stays awake is doing something no MacBook was shaped for: working hard with its heat vents against fabric and its screen — the only way it can tell you anything — dark. The failure modes are not hypothetical: heat that would be a fan noise on a desk is a shutdown in a backpack, and a battery that would show you a warning at 10% just dies.
+
+Whatever holds the lid open awake should therefore also do three things:
+
+- **Expire on its own.** A hold with no timeout is a flat battery waiting to happen.
+- **Watch temperature.** With the lid closed there is no fan-noise feedback and no screen. The hold should release when the machine gets hot, because sleep is the correct response to heat you cannot see.
+- **Watch the battery.** Same reasoning. Below a cutoff, let the machine sleep rather than run to zero.
+
+This is the checklist [is it safe to keep a MacBook awake in a bag](../macbook-awake-in-bag-safe/) develops in detail. goguma exists because doing all of this by hand, correctly, every time, is the actual work — its holds are leases that expire, and every hold is dropped if a closed machine gets hot or the battery falls below a cutout.
+
+## Which one you want
+
+| Situation | Answer |
+|---|---|
+| Laptop closed under an external monitor | Clamshell mode — plug in the display and power |
+| A job must finish while the lid is closed, no display | `disablesleep`, with a timeout and cutouts |
+| An [AI coding agent is working](../keep-coding-agent-running-lid-closed/) with the lid shut | Same mechanism, scoped to the agent's activity |
+| The machine is asleep and a 3am job is coming | Neither — that needs [a scheduled wake](../wake-mac-for-scheduled-job-pmset/) |
+
+The last row matters: everything on this page keeps an awake machine awake. None of it wakes a machine that has already gone to sleep. Those are different mechanisms, and mixing them up is the most common way this goes wrong.
+
+
+---
+
+# How to find out what woke your Mac
+
+URL: https://getgoguma.com/blog/what-woke-my-mac/
+
+Run `pmset -g log | grep -E "Wake from|DarkWake"` to see every wake with a timestamp and a cause. The token after "due to" names the reason — `lid` is the lid opening, `trackpadkeyboard` is input, `rtc` is a scheduled wake somebody armed, `wifibt` is the network card. Lines that say DarkWake rather than Wake are short maintenance wakes where the screen never turns on; they are normal and typically last a few seconds.
+
+## The log that already has the answer
+
+macOS records every transition in and out of sleep, with a timestamp and a cause. Nothing needs to be installed or enabled first:
+
+```sh
+pmset -g log | grep -E "Wake from|DarkWake"
+```
+
+Real lines from a real machine, trimmed for width:
+
+```
+16:27:28  DarkWake from Deep Idle : due to smc.sysState.Wake wifibt
+16:37:34  Wake from Deep Idle     : due to smc.sysState.Wake lid
+17:55:38  DarkWake to FullWake    : due to UserActivity Assertion
+20:53:08  Wake from Hibernate     : due to trackpadkeyboard/UserActivity
+```
+
+Each line answers the question directly: when, from how deep a sleep, and why.
+
+## Reading the reasons
+
+The token after `due to` is the cause. The common ones:
+
+| Token | What it means |
+|---|---|
+| `lid` | The lid was opened |
+| `trackpadkeyboard` | Keyboard or trackpad input |
+| `UserActivity` | An assertion declared a user present — usually you touching it |
+| `rtc` | The real-time clock fired — **a scheduled wake something armed** |
+| `wifibt` | The wireless hardware — network traffic, or a nearby device |
+| `EC.ACAttach` / power tokens | The charger was plugged in |
+
+Two of these deserve a closer look, because they are the ones that wake machines nobody is touching.
+
+**`rtc` is a scheduled wake.** Something asked the machine to wake at that exact time. The pending ones are listed, with names attached:
+
+```sh
+$ pmset -g sched
+Scheduled power events:
+ [0]  wake at 08/28/2026 21:22:55 by 'goguma'
+ [1]  wake at 08/29/2026 00:00:00 by 'com.apple...donotdisturb...timer'
+```
+
+The owner string tells you who to go and ask. Anything from `pmset schedule` shows here, including [wakes armed for scheduled jobs](../wake-mac-for-scheduled-job-pmset/), alongside Apple's own timers.
+
+**`wifibt` with Wake for network access.** If the `womp` setting is on (it is by default on AC — "Wake for network access" in System Settings), the machine comes up briefly to answer network traffic. These are almost always dark wakes.
+
+## Wake versus DarkWake — the distinction that explains most mysteries
+
+A line that starts `Wake` is the real thing: the machine came up fully. A line that starts `DarkWake` is housekeeping — the system runs briefly with the display off, then goes back to sleep. macOS punctuates a long sleep with these, and they typically last a few seconds each.
+
+If you are investigating "my Mac wakes up at night", sort the lines first: a string of DarkWakes is a machine behaving normally, not a problem to fix. A full `Wake` at 03:12 with `rtc` as the reason is a scheduled wake, and `pmset -g sched` will tell you whose. What dark wakes are for, and why your jobs do not run during them, is its own subject — [covered here](../dark-wake-power-nap/).
+
+## Turning the question around
+
+The same log answers the opposite question, which is usually the one that matters more: not "what woke it" but "what did it sleep through". Every interval between a `Sleep` line and the next `Wake` line is time your scheduled jobs did not exist for — and [cron does not tell you what it missed](../cron-jobs-dont-run-mac-asleep/). Replaying each job's schedule against these intervals is how you [find the runs that silently never happened](../find-missed-scheduled-jobs-mac/); it is also the first thing goguma does when installed, using exactly this log.
+
+
+---
+
+# How to keep a Mac awake from the terminal until a command finishes
+
+URL: https://getgoguma.com/blog/keep-mac-awake-terminal-command/
+
+Prefix the command with caffeinate — `caffeinate -i ./build.sh` holds off idle sleep until build.sh exits, then releases automatically. To cover an already-running process, use `caffeinate -i -w <pid>`, which releases when that pid exits. The hold is scoped to the work, which is the whole point — nothing to remember to turn off. It does not survive the lid closing, and `-s` only works on AC power.
+
+## Scope the hold to the work
+
+The naive way to keep a Mac awake for a long task is to open System Settings and set sleep to Never, run the task, and try to remember to set it back. The failure mode is the second half: nobody remembers, and the machine spends the next month never sleeping.
+
+The right shape is a hold that is created by the work and dies with the work. That is exactly what caffeinate does when you give it a command:
+
+```sh
+caffeinate -i ./build.sh
+```
+
+caffeinate starts `build.sh`, holds an assertion against idle sleep for as long as it runs, and releases it the instant the process exits — success, failure, or ctrl-C. There is nothing to remember, because there is nothing left behind.
+
+For work that is already running, scope to its pid instead:
+
+```sh
+caffeinate -i -w 48291
+```
+
+The assertion is released when that process exits.
+
+## The flags that matter
+
+From `caffeinate(8)`, condensed to the ones you will actually use:
+
+| Flag | Holds off | Notes |
+|---|---|---|
+| `-i` | Idle system sleep | The default choice. Works on battery. |
+| `-d` | Display sleep | Add it if something on screen must stay visible |
+| `-s` | System sleep | **AC power only** — on battery it holds nothing |
+| `-m` | Disk idle sleep | Rarely needed on SSDs |
+| `-w <pid>` | — | Scope the hold to an existing process |
+| `-t <secs>` | — | Timed hold, no command attached |
+
+The `-s` caveat is the one that bites people: it reads like the strongest option, and on a plugged-in machine it is, but the man page is explicit that the assertion is valid only on AC power. A laptop that leaves the desk mid-task is no longer holding anything.
+
+You can watch any of these holds exist and disappear with `pmset -g assertions`, which lists every active assertion and the process behind it.
+
+## What this cannot cover
+
+Two boundaries, one obvious and one not:
+
+**The lid.** Every caffeinate assertion prevents some form of idle sleep. Closing the lid is not idle sleep, and it wins — [in detail here](../caffeinate-lid-closed/). If the laptop will be closed while the work runs, you are in [different territory](../keep-macbook-awake-lid-closed/).
+
+**Work that doesn't map to a process.** `caffeinate -i cmd` is perfect when one process is the work. An AI coding agent breaks that assumption: the process sits blocked on a network socket for minutes at a time, [looking exactly like an idle one](../cannot-detect-ai-agent-working/), and the session outlives any single command. Scoping a hold to agent activity takes cooperation from the agent's harness, which is [its own subject](../keep-coding-agent-running-lid-closed/). For a plain long command, though — a build, a training run, an export, a huge copy — the wrapper pattern is exactly right, and `goguma run -- <command>` is the same idea with expiry and safety cutouts attached.
+
+## The case none of this covers
+
+caffeinate, and everything else on this page, keeps an awake machine awake. If the machine will already be asleep when the work is due — the 3am cron job, the backup before you get up — no assertion helps, because there is nothing awake to hold. That case needs [a scheduled wake](../wake-mac-for-scheduled-job-pmset/), which is a different mechanism entirely.
+
+
+---
+
+# pmset repeat: put your Mac's sleep and wake on a daily schedule
+
+URL: https://getgoguma.com/blog/pmset-repeat-wake-schedule/
+
+`sudo pmset repeat wakeorpoweron MTWRF 07:45:00` wakes (or powers on) the Mac at 7:45 every weekday; `sudo pmset repeat cancel` clears it. Weekdays are a subset of MTWRFSU. Only one repeating rule of each kind exists at a time — a new one replaces the old — and `pmset -g sched` shows what is currently armed. The scheduled-sleep half is refused if anything is actively holding sleep off at that moment.
+
+## The schedule outlived its settings panel
+
+Old Mac OS had a Schedule button in Energy Saver: start up or wake at 7:45 on weekdays, sleep at midnight. The panel is gone from System Settings; the mechanism underneath it is not. `pmset repeat` is that mechanism, driven directly.
+
+```sh
+sudo pmset repeat wakeorpoweron MTWRF 07:45:00
+```
+
+That is: every weekday at 07:45, wake the machine if it is asleep — or boot it if it is powered off, which is what distinguishes `wakeorpoweron` from plain `wake`.
+
+The weekday string is documented in `pmset(1)` as any subset of `MTWRFSU` — Monday through Sunday, one letter each, R for Thursday and U for Sunday. `M` alone is valid; so is `MTWRF`; so is the full week.
+
+Both halves of the old panel work, and they can be set in one line — this example is from the man page itself:
+
+```sh
+sudo pmset repeat wakeorpoweron T 12:00:00 sleep MTWRFSU 20:00:00
+```
+
+Cancelling is one command, and it clears every repeating rule:
+
+```sh
+sudo pmset repeat cancel
+```
+
+## Verify what is actually armed
+
+Never assume; the machine will tell you:
+
+```sh
+$ pmset -g sched
+Scheduled power events:
+ [0]  wake at 08/28/2026 21:22:55 by 'goguma'
+```
+
+`pmset -g sched` shows both kinds: repeating rules appear under their own heading when one is set, and every [one-shot scheduled event](../wake-mac-for-scheduled-job-pmset/) is listed with an owner naming who armed it. If a wake fires that you do not recognise, [the log names the reason](../what-woke-my-mac/) and this list names the culprit.
+
+## The gotchas
+
+**One rule of each kind.** There is a single repeating wake slot and a single repeating sleep slot. Setting a new rule replaces the old one silently. If you need Tuesday at 06:00 and Friday at 09:00, repeat cannot express it — that is one-shot territory.
+
+**Scheduled sleep is polite.** The repeating sleep half will not force a machine down past active work — assertions held against sleep win, which is the same mechanism [caffeinate](../keep-mac-awake-terminal-command/) uses in the other direction. Treat scheduled sleep as "start trying to sleep at 20:00", not as a guarantee.
+
+**Wake is a moment, not a state.** The 07:45 wake brings the machine up; the ordinary sleep timers then apply. If nothing touches it, it drifts back to sleep on the usual idle schedule. A wake scheduled so a job can run needs the job to *hold* the machine awake for its duration, or the machine may not still be up when the job's real work starts.
+
+**Repeat expresses routines, not job schedules.** A daily 07:45 wake is a routine. A crontab with jobs at 02:00, 03:30, and hourly-on-Sundays is not — expressing it as repeat rules is impossible, and arming one-shots for each fire time, forever, [is a job for software](../cron-jobs-dont-run-mac-asleep/) rather than for a person. That is the half goguma automates: it reads the schedules you already have and keeps the next one-shot wake armed, so the standing-rule limitations stop mattering.
+
+
+---
+
+# Dark wake and Power Nap: when your Mac is awake but not really
+
+URL: https://getgoguma.com/blog/dark-wake-power-nap/
+
+A dark wake is a brief system wake with the display off, used for background housekeeping — checking in with the network, and on Power Nap machines fetching mail and running backups. They typically last a few seconds and appear in `pmset -g log` as DarkWake lines. They are not usable time for your own scheduled work — cron and launchd jobs cannot be counted on to run during one, so a machine that dark-wakes all night has still, for your purposes, slept through the night.
+
+## Not all wakes are equal
+
+Sleep on a modern Mac is not the unbroken absence of activity it appears to be. Watch [the power log](../what-woke-my-mac/) after a night of "sleep":
+
+```sh
+pmset -g log | grep -E "Wake from|DarkWake"
+```
+
+```
+16:27:28  DarkWake from Deep Idle : due to smc.sysState.Wake wifibt
+16:37:34  Wake from Deep Idle     : due to smc.sysState.Wake lid
+17:55:38  DarkWake to FullWake    : due to UserActivity Assertion
+```
+
+Two different things are called waking here. A `Wake` line is the machine genuinely coming up — display on, everything running, staying up until something lets it sleep. A `DarkWake` line is the half-state: the system comes up with the display off, does its errand, and drops back to sleep, typically within seconds.
+
+The third line shows the promotion path: a `DarkWake to FullWake` is a dark wake that got upgraded to the real thing, usually because you touched the machine while it happened to be up.
+
+## What dark wakes are for
+
+The system uses them for its own maintenance: keeping its network presence alive, servicing timers, and — on machines with Power Nap enabled — the feature's advertised work. Power Nap is the `powernap` setting (`pmset -g` shows yours; it is on by default on supported machines) and it is a *policy* about what may happen during these display-off wakes: checking mail, App Store updates, Time Machine.
+
+The distinction worth keeping: **dark wake is the mechanism, Power Nap is a feature built on it.** Turning `powernap` off does not end dark wakes; the system still uses them for its own bookkeeping.
+
+## Why your jobs still count as missed
+
+Here is the trap in reasoning: "the log shows the machine woke twelve times last night, so my 3am job had chances to run."
+
+It did not, for two reasons:
+
+- **Dark wakes are seconds long.** They are shaped for the system's errands, not for user work. A backup script, a build, a sync — none of it fits in the window, and the system is actively heading back to sleep the whole time.
+- **Your schedulers were effectively absent.** [cron skips any minute that passes while the machine sleeps](../cron-jobs-dont-run-mac-asleep/), and a seconds-long display-off wake at 02:41 does not change what happens at 03:00. From your crontab's point of view, a night of dark wakes and a night of unbroken sleep are the same night.
+
+This is also why counting missed jobs from the log requires care: naively treating every DarkWake as "the machine was up" produces a rosy picture in which nothing was ever missed. When [replaying a schedule against sleep history](../find-missed-scheduled-jobs-mac/), gaps of a few seconds between sleep intervals have to be treated as sleep — goguma coalesces any gap under 90 seconds for exactly this reason, because a machine that was technically up for four seconds at 02:41 was not, in any sense that matters to a job, awake.
+
+## What to do instead
+
+If the goal is background work happening at a specific time on a sleeping Mac, the mechanism is a real scheduled wake — `pmset schedule` for [a particular job's fire time](../wake-mac-for-scheduled-job-pmset/), or `pmset repeat` for [a fixed daily routine](../pmset-repeat-wake-schedule/). A scheduled wake brings the machine fully up at a time you chose, and with something holding sleep off for the job's duration, the work actually happens.
+
+Power Nap is not that mechanism, and was never meant to be. It keeps Apple's things fresh during sleep. Yours still need the machine actually awake.
+
+
+---
+
+# pmset disablesleep: the sleep switch with no owner
+
+URL: https://getgoguma.com/blog/pmset-disablesleep/
+
+`sudo pmset -a disablesleep 1` stops a Mac sleeping entirely — idle timers, the lid, everything — until `sudo pmset -a disablesleep 0` sets it back. It does not appear in the settings list of `man pmset`, and unlike an assertion it is not tied to any process: kill whatever set it and the switch stays set. Anything that automates it needs a dead-man switch that clears the flag if the owner disappears.
+
+## The strongest switch, with the sharpest edge
+
+```sh
+sudo pmset -a disablesleep 1
+```
+
+With that set, the machine does not sleep. Not on the idle timers, not on battery, and — the reason anyone reaches for it — [not when the lid closes](../keep-macbook-awake-lid-closed/). Nothing else on macOS overrides lid sleep without an external display attached. This does.
+
+```sh
+sudo pmset -a disablesleep 0
+```
+
+sets it back. Between those two commands, the machine's sleep is simply off, and `pmset -g` says so:
+
+```sh
+$ pmset -g | grep SleepDisabled
+ SleepDisabled		1
+```
+
+It is worth noticing what is *not* true of it: `disablesleep` does not appear in the settings list of `man pmset`. It works, it has worked for years, and Apple documents it nowhere on the page that documents everything else — which is a fair summary of its status. Use it knowingly.
+
+## Owned by nobody
+
+The important contrast is with [caffeinate and its assertions](../keep-mac-awake-terminal-command/). An assertion is owned: a process holds it, and when that process exits — cleanly, by crash, by kill — the assertion is released and the machine can sleep. The system even lists the owner in `pmset -g assertions`.
+
+`disablesleep` is not an assertion. It is a stored flag. The script that set it can crash, be killed, or simply forget, and the flag stays set. Nothing notices. Nothing times out. The machine just never sleeps again until someone works out why and sets it back — and the symptom, a Mac that quietly stops sleeping, does not point at its cause.
+
+On a desktop that is an electricity bill. On a laptop [closed in a bag](../macbook-awake-in-bag-safe/), it is a flat battery or a hot machine, with the screen — the only thing that could have warned you — dark.
+
+## The discipline it demands
+
+If a human sets it by hand for an afternoon, the discipline is a reminder to set it back. If software sets it, the bar is higher, and this is exactly the design problem [every tool built on this mechanism](../caffeinate-vs-pmset-vs-amphetamine/) has to answer:
+
+- **Pair every set with a guaranteed unset.** Not "the script clears it at the end" — the script crashing *is* the case that matters. The unset has to survive the owner's death.
+- **A dead-man switch, not good intentions.** Something independent of the setter should clear the flag when the setter stops confirming it is alive. goguma's answer: the privileged helper that holds the flag clears it after 60 seconds without contact from the daemon, so a crashed daemon strands nothing.
+- **Cutouts, because the screen is closed.** Whatever holds a closed machine awake should release on temperature and low battery, since with the lid shut those are exactly the conditions nobody can see developing.
+
+## When it is the right tool
+
+For all its sharpness, there are exactly two situations where it is the honest answer: a lid-closed machine with no display that must keep working, and testing what your own software does when sleep genuinely cannot happen. For everything else — a script, a build, a download — [a scoped assertion](../keep-mac-awake-terminal-command/) does the job and cleans up after itself.
+
+And like everything on this branch of the problem, it keeps an awake machine awake. A machine that is already asleep at 03:00 needs [a scheduled wake](../wake-mac-for-scheduled-job-pmset/), which no amount of sleep-disabling can retroactively provide.
+
+
+---
+
+# Every pmset sleep setting, explained
+
+URL: https://getgoguma.com/blog/pmset-sleep-settings-explained/
+
+Run `pmset -g` to see your Mac's power settings. The ones that matter: `sleep` is the idle timer for the whole system, `displaysleep` for the screen alone. `hibernatemode` picks the sleep style — 0 is memory-only (desktop default), 3 keeps memory powered plus a disk image (laptop default), 25 powers memory off and restores from disk. `standby` moves a long-sleeping laptop into that deeper state, `womp` is Wake for network access, `ttyskeepawake` keeps the Mac up while an SSH session is active, and settings can differ per power source — `-b` battery, `-c` charger, `-a` both.
+
+## Reading your own machine
+
+Everything below is visible in one command:
+
+```sh
+pmset -g
+```
+
+That prints the settings currently in effect — plus, at the top, anything currently overriding them, because assertions from running processes outrank stored settings. A `SleepDisabled 1` line, for instance, means [something has switched sleep off entirely](../pmset-disablesleep/).
+
+One structural fact makes sense of the rest: **most settings exist twice.** There is a battery set and a charger set, and they usually differ — which is the answer to a whole family of "why does it only do this unplugged?" mysteries. `pmset -b` writes the battery values, `-c` the charger values, `-a` both at once.
+
+## The timers
+
+| Setting | Controls |
+|---|---|
+| `sleep` | Minutes of idleness before the whole system sleeps. 0 disables idle sleep. |
+| `displaysleep` | The screen alone. Almost always shorter than `sleep`. |
+| `disksleep` | Disk spindown. Vestigial on SSDs. |
+
+These are *idle* timers: they answer "how long after the human stops". They are overridden by assertions — that is [how caffeinate works](../keep-mac-awake-terminal-command/) — and they are irrelevant to the lid, which sleeps the machine [regardless of any timer](../keep-macbook-awake-lid-closed/).
+
+## The sleep styles: hibernatemode
+
+`hibernatemode` decides what "asleep" physically means. The man page documents three values, and warns you to use caution with all of them:
+
+- **0** — sleep is memory-only. Nothing written to disk; wake is instant; power loss loses the session. The desktop default.
+- **3** — memory stays powered *and* a copy is written to disk. Wake is instant from memory, and if power fails, the machine restores from the image instead of losing everything. The laptop default.
+- **25** — the image is written and memory is powered off. Slower to sleep, slower to wake, and the best battery of the three. In the man page's own words: if you want hibernation, this is the setting.
+
+Adjacent to it, `standby`: with it on, a laptop that has been asleep for a while writes the image and drops into the deeper state anyway — mode 3 sleep that matures into mode 25. The delay is governed by `standbydelayhigh` and `standbydelaylow`, split by whether the battery is above or below `highstandbythreshold` (default 50%). This is why [a wake in the log can say "Wake from Hibernate"](../what-woke-my-mac/) on a machine nominally in mode 3 — it slept long enough to graduate. To never write images at all, the man page's recipe is `hibernatemode`, `standby`, and `autopoweroff` all 0.
+
+## The network and terminal settings
+
+- **`womp`** — wake on magic packet; the "Wake for network access" checkbox. A sleeping Mac stays reachable, at the cost of brief [dark wakes](../dark-wake-power-nap/) to maintain its network presence.
+- **`powernap`** — permits background work (mail, backups) during those display-off wakes on supported machines.
+- **`ttyskeepawake`** — while a terminal session is active, no idle sleep. This is why a Mac someone is SSH'd into stays up — and the fine print is that a tty only counts as inactive once its idle time exceeds the sleep timer. [More on SSH and sleep](../ssh-sessions-mac-sleep/).
+
+## What none of these do
+
+Settings shape when the machine sleeps and how deeply. No setting here wakes it at a time of your choosing — that is a different mechanism, [`pmset schedule`](../wake-mac-for-scheduled-job-pmset/) for one-shots and [`pmset repeat`](../pmset-repeat-wake-schedule/) for routines. And no timer value rescues [a cron job whose moment passed during sleep](../cron-jobs-dont-run-mac-asleep/); by the time the machine is back, the minute is gone.
+
+
+---
+
+# Why SSH sessions drop when your Mac sleeps, and what actually survives
+
+URL: https://getgoguma.com/blog/ssh-sessions-mac-sleep/
+
+A sleeping Mac has no network, so SSH dies in both directions — outbound sessions to servers drop, and nobody can reach the Mac itself. tmux or mosh on the remote end make the disconnection survivable; they do not prevent it. To keep the Mac from sleeping while someone is SSH'd into it, the ttyskeepawake setting (on by default) already does that. To keep an outbound session alive, the Mac must simply not sleep while it matters — a hold scoped to the work.
+
+## Sleep is a network event
+
+Every SSH connection is a TCP connection, and a sleeping Mac does not have those. Whatever else sleep suspends, it suspends the network stack, and both directions of SSH go down with it:
+
+- **Outbound** — your laptop's session into a server dies when the laptop sleeps. The server's sshd notices a dead peer, eventually, and your remote shell — and anything running in the foreground of it — is gone.
+- **Inbound** — nobody can SSH into a sleeping Mac, because there is nothing listening. The machine is not slow to answer; it is absent.
+
+Most advice on this topic addresses one direction while sounding like it addresses both, which is how people end up with tmux installed and a job that still died.
+
+## Outbound: make the disconnection cost nothing, or prevent it
+
+**tmux (or screen) runs on the server, not on your Mac.** When your laptop sleeps and the connection drops, the tmux session on the server keeps your shell and your processes alive. You reattach in the morning and the overnight build is still there. This is the right tool when *disconnection is acceptable* and what matters is that remote work survives it.
+
+**mosh smooths the reconnection** — it picks the session back up when your Mac returns, without a fresh login. Same category: it makes dropping and returning cheap. It does not keep anything alive on your Mac's side.
+
+**Neither prevents the disconnect.** If the session itself must stay up — a long interactive process you are watching, a port-forward something depends on — then the Mac must not sleep while it matters, and the clean way is [a hold scoped to the work](../keep-mac-awake-terminal-command/), not a permanent settings change. With the lid closed, that becomes [a different problem](../keep-macbook-awake-lid-closed/) with a different answer.
+
+## Inbound: the Mac as the server
+
+Two settings govern this, both visible in [`pmset -g`](../pmset-sleep-settings-explained/):
+
+**`ttyskeepawake`, on by default, is why an active SSH session keeps the Mac up.** From `pmset(1)`: it prevents idle system sleep while any tty is active, and a tty counts as inactive only once its idle time exceeds the system sleep timer. In practice: while you are working in the session, the Mac stays up; walk away, and the idle clock eventually runs out on both.
+
+**`womp` — Wake for network access — keeps a sleeping Mac reachable, barely.** The machine wakes briefly for certain traffic on the local network. These are [dark wakes](../dark-wake-power-nap/), seconds long, and fine for what they are for; a machine you depend on reaching over SSH at arbitrary times is a machine that should actually be awake.
+
+And note what `ttyskeepawake` does not cover: the lid. An SSH session into a MacBook whose lid closes ends the way [everything ends when the lid closes](../caffeinate-lid-closed/).
+
+## The overnight case
+
+The pattern behind most SSH-and-sleep frustration is a Mac that needs to be *available* — as the client driving remote work, or as the server being reached — during hours when it would naturally sleep. Piecemeal fixes stack up: tmux for the disconnects, womp for reachability, a longer sleep timer for the evening.
+
+The stable arrangement is simpler to state: the machine should be awake exactly when something needs it, and asleep otherwise. For sessions, that is a hold scoped to the session's work. For scheduled overnight work, it is [a wake armed for the job's fire time](../wake-mac-for-scheduled-job-pmset/) — which is the arrangement goguma maintains automatically, and the reason [a sleeping Mac's cron jobs](../cron-jobs-dont-run-mac-asleep/) are the adjacent problem this one usually turns out to be.
+

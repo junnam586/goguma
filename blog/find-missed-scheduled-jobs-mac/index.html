@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to find which of your scheduled jobs your Mac has been missing</title>
+<meta name="description" content="cron keeps no record of a job it skipped, so you have to reconstruct it — replay each schedule against the machine&#x27;s own sleep history. Here is how, by hand.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="How to find which of your scheduled jobs your Mac has been missing">
+<meta property="og:description" content="cron keeps no record of a job it skipped, so you have to reconstruct it — replay each schedule against the machine&#x27;s own sleep history. Here is how, by hand.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/find-missed-scheduled-jobs-mac/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to find which of your scheduled jobs your Mac has been missing">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/find-missed-scheduled-jobs-mac/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "How to find which of your scheduled jobs your Mac has been missing",
+ "description": "cron keeps no record of a job it skipped, so you have to reconstruct it \u2014 replay each schedule against the machine's own sleep history. Here is how, by hand.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/find-missed-scheduled-jobs-mac/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "How to find which of your scheduled jobs your Mac has been missing",
+   "item": "https://getgoguma.com/blog/find-missed-scheduled-jobs-mac/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Is there a log of cron jobs that did not run?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. cron only produces output for jobs that ran. A skipped occurrence generates no log line, no mail, and no exit code, because from cron's point of view nothing happened."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I see when my Mac was asleep?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "pmset -g log prints the sleep and wake history with timestamps and reasons. Filtering for Sleep and Wake entries gives you the intervals the machine was unavailable, usually going back several days."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How far back does the sleep log go?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Typically a few days to a couple of weeks depending on how much else is logging. It is a rolling buffer, not permanent history, so an audit tells you about recent weeks rather than all time."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Which jobs should I check?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Anything in crontab, and any scheduler that runs inside its own process. launchd StartCalendarInterval jobs re-fire on wake, so they are usually not worth auditing."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>How to find which of your scheduled jobs your Mac has been missing</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p>There is no log of a job that never ran, so you cannot look it up. You reconstruct it: read the sleep and wake intervals out of <code>pmset -g log</code>, replay each job's schedule against them, and count the fire times that landed inside a sleep. That count is the number nobody has and everybody wants.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>Why you have to reconstruct it</h2>
+<p>A job that ran and failed leaves evidence — a non-zero exit code, output, a mail. A job that never started leaves nothing. cron did not error, because cron did not do anything. Your job's own logging never ran, because your job never ran.</p>
+<p>So the question "which of my jobs have been missed?" cannot be answered by looking. It has to be computed, from two things you do have: what each job's schedule says, and when the machine was actually asleep.</p>
+<h2>Step 1: get the sleep history</h2>
+<p>macOS records every sleep and wake:</p>
+<pre><code>pmset -g log | grep -E &quot;Entering Sleep|Wake from&quot;</code></pre>
+<p>You get lines with a timestamp and a reason — <code>Entering Sleep state due to 'Clamshell Sleep'</code>, <code>Wake from Standby due to EC.LidOpen</code>. Pair each sleep with the next wake and you have the intervals during which nothing could have run.</p>
+<p>This is a rolling buffer, so it covers recent days to a couple of weeks rather than all history. That is usually enough: if a job is being missed, it is being missed repeatedly.</p>
+<p>For a quick view of just the transitions:</p>
+<pre><code>pmset -g log | awk &#x27;/Entering Sleep|Wake from/ {print $1, $2, $4, $5, $6}&#x27;</code></pre>
+<h2>Step 2: list what is actually scheduled</h2>
+<p>Three places, and most people forget the third.</p>
+<pre><code>crontab -l                                    # your crontab
+ls ~/Library/LaunchAgents /Library/LaunchAgents /Library/LaunchDaemons</code></pre>
+<p>The third is <strong>application-level schedulers</strong> — tools that keep their own job store and fire jobs from their own process. These appear in neither <code>crontab -l</code> nor <code>launchctl list</code>, because the OS is not involved at all. If one of those is where your real automation lives, an OS-only audit reports "nothing scheduled here" while every job you care about sits in a file it never looked at.</p>
+<h2>Step 3: replay the schedule against the sleeps</h2>
+<p>For each job, expand its schedule into the fire times it should have had over the window, then check each one against the sleep intervals.</p>
+<p>A cron expression like <code>0 3 * * *</code> over a fourteen-day window is fourteen fire times. If the machine was asleep across 03:00 on eleven of those days, that job has silently not run eleven times.</p>
+<p>The arithmetic is simple; doing it for every job by hand is not, which is why almost nobody does it and why the misses accumulate unnoticed for months.</p>
+<h2>What to do with the answer</h2>
+<p>The count sorts your jobs into three groups, and each wants something different.</p>
+<p><strong>Missed often, and it matters.</strong> These need a <a href="../wake-mac-for-scheduled-job-pmset/">scheduled wake</a>. This is the group the whole exercise exists to find.</p>
+<p><strong>Missed often, and it does not matter.</strong> A cache cleanup that runs at 04:00 and would be just as useful at 09:00. Move it to a launchd <code>StartCalendarInterval</code>, which <a href="../launchd-vs-cron-sleep/">re-fires on wake by itself</a>, and stop thinking about it.</p>
+<p><strong>Never missed.</strong> It fires during hours the machine is reliably awake. Leave it alone. Waking a Mac for a job that was never in trouble is a cost with no benefit.</p>
+<p>That last group matters more than it looks. The temptation after an audit is to put a wake in front of everything. Most jobs do not need one, and every unnecessary wake is battery spent for nothing.</p>
+<h2>One subtlety about "asleep"</h2>
+<p>A Mac is not simply awake or asleep. Overnight it cycles through <a href="../dark-wake-power-nap/">brief dark wakes</a> — powering up for a few seconds to fetch mail or run maintenance, then going back down. A fire time that lands inside one of those windows *might* have run.</p>
+<p>Treat dark wake as sleep for auditing purposes. It is short, it is not scheduled around your job, and relying on your 03:00 job coinciding with a dark wake is not a strategy. If you are counting misses, counting a dark-wake coincidence as a hit will flatter the numbers and hide the problem.</p>
+<h2>Doing it automatically</h2>
+<p>This is the first thing goguma does when you install it. It reads your crontab, your user and system launchd jobs, and application-level schedulers it knows about, replays each schedule against the machine's own sleep history, and reports which have been missing runs and how often — before you configure anything.</p>
+<p>It also skips the launchd calendar jobs, because those already handle themselves, and it records what each job costs in battery so you can see which are worth waking for.</p>
+<h2>Common questions</h2><h3>Is there a log of cron jobs that did not run?</h3><p>No. cron only produces output for jobs that ran. A skipped occurrence generates no log line, no mail, and no exit code, because from cron's point of view nothing happened.</p><h3>How do I see when my Mac was asleep?</h3><p>pmset -g log prints the sleep and wake history with timestamps and reasons. Filtering for Sleep and Wake entries gives you the intervals the machine was unavailable, usually going back several days.</p><h3>How far back does the sleep log go?</h3><p>Typically a few days to a couple of weeks depending on how much else is logging. It is a rolling buffer, not permanent history, so an audit tells you about recent weeks rather than all time.</p><h3>Which jobs should I check?</h3><p>Anything in crontab, and any scheduler that runs inside its own process. launchd StartCalendarInterval jobs re-fire on wake, so they are usually not worth auditing.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../launchd-vs-cron-sleep/">launchd vs cron on macOS — which one survives sleep</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>launchd vs cron on macOS — which one survives sleep</title>
+<meta name="description" content="launchd re-fires a missed calendar job on wake; cron skips it silently. Which one you are using decides whether a sleeping Mac is a problem or a non-event.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="launchd vs cron on macOS — which one survives sleep">
+<meta property="og:description" content="launchd re-fires a missed calendar job on wake; cron skips it silently. Which one you are using decides whether a sleeping Mac is a problem or a non-event.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/launchd-vs-cron-sleep/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="launchd vs cron on macOS — which one survives sleep">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/launchd-vs-cron-sleep/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "launchd vs cron on macOS \u2014 which one survives sleep",
+ "description": "launchd re-fires a missed calendar job on wake; cron skips it silently. Which one you are using decides whether a sleeping Mac is a problem or a non-event.",
+ "datePublished": "2026-08-20",
+ "dateModified": "2026-08-20",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/launchd-vs-cron-sleep/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "launchd vs cron on macOS \u2014 which one survives sleep",
+   "item": "https://getgoguma.com/blog/launchd-vs-cron-sleep/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Does launchd run missed jobs after the Mac wakes?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes, for StartCalendarInterval jobs. If the fire time passed while the machine was asleep, launchd runs the job once on wake. It does not run it once per missed occurrence, and it does not apply if the Mac was powered off."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does cron run missed jobs after wake?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "No. cron matches the current minute against its schedule. Minutes that pass while asleep are never evaluated, so the occurrence is skipped with no error and no log entry."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Should I move my cron jobs to launchd?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "If running hours late is acceptable \u2014 an updater, a sync, an index rebuild \u2014 yes, it removes the problem entirely. If the job has to run at a specific time, launchd's catch-up does not help and you need a scheduled wake instead."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What about StartInterval instead of StartCalendarInterval?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "StartInterval counts elapsed time rather than wall clock, and sleep does not count toward it. A job set to every 3600 seconds does not fire repeatedly to catch up after an eight-hour sleep; it fires once and the interval restarts."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Does this apply to Homebrew services?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Yes. `brew services` writes LaunchAgents, so a Homebrew-managed service using StartCalendarInterval gets launchd's catch-up behaviour."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>launchd vs cron on macOS — which one survives sleep</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-20</p>
+    <div class="answer"><p><strong>launchd re-fires a missed <code>StartCalendarInterval</code> job once when the Mac wakes. cron does not — it skips the occurrence entirely and records nothing.</strong> So the same schedule, expressed two ways, has completely different behaviour on a laptop. If running late is acceptable, launchd already solves this. If the job has to run *at* its time, neither does.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The difference in one table</h2>
+<div class="tw"><table><thead><tr><th></th><th>cron</th><th>launchd <code>StartCalendarInterval</code></th><th>launchd <code>StartInterval</code></th></tr></thead><tbody><tr><td>Missed while asleep</td><td><strong>skipped silently</strong></td><td><strong>runs once on wake</strong></td><td>interval restarts</td></tr><tr><td>Missed while powered off</td><td>skipped</td><td>skipped</td><td>interval restarts</td></tr><tr><td>Runs once per missed occurrence</td><td>—</td><td>no, once total</td><td>no</td></tr><tr><td>Records that it was missed</td><td>no</td><td>no</td><td>no</td></tr><tr><td>Runs at the exact scheduled time</td><td>only if awake</td><td>only if awake</td><td>approximately</td></tr></tbody></table></div>
+<p>Both of those rows are stated outright in <code>launchd.plist(5)</code> — the man page on your own machine, which is worth reading before trusting any blog post about this, including this one:</p>
+<blockquote><p>Unlike cron which skips job invocations when the computer is asleep, launchd will start the job the next time the computer wakes up. If multiple intervals transpire before the computer is woken, those events will be coalesced into one event upon wake from sleep.</p></blockquote>
+<p>That second sentence is the source for "once, not once per occurrence" below.</p>
+<h2>Why cron behaves this way</h2>
+<p>cron is a loop over wall-clock minutes. Each minute it wakes, compares now against every crontab line, runs the matches, and sleeps again. A minute that does not happen — because the machine was asleep — is never compared against anything.</p>
+<p>There is no queue, so there is nothing to drain on wake. There is no record, because a job that never started produced no output, no exit code, and no mail. From cron's point of view nothing went wrong, which is precisely why the failure is invisible for weeks.</p>
+<h2>Why launchd behaves differently</h2>
+<p>launchd holds a calendar entry as a description of *when a thing should have happened*, not as a minute to match. On wake it can see that a fire time has passed and act on it.</p>
+<p>Two limits worth stating precisely, because both catch people:</p>
+<p><strong>Once, not once per occurrence.</strong> A job scheduled <code>every hour</code> that slept through nine fire times runs <strong>one</strong> time on wake, not nine. If your job is idempotent this is exactly what you want. If each run processes a queue or produces a dated artefact, you have eight missing artefacts and one confusing catch-up run.</p>
+<p><strong>Sleep only, not shutdown.</strong> Powered off, launchd is not running and has nothing to reconcile.</p>
+<h2><code>StartInterval</code> is a third behaviour</h2>
+<p><code>StartInterval</code> — every N seconds — is neither of the above. It counts elapsed time, and sleep does not count. Set a job to run every 3600 seconds, sleep for eight hours, and on wake you do not get eight catch-up runs; you get one run and the timer restarts.</p>
+<p>This is usually the desired behaviour for a poller, and it is a genuine reason to prefer <code>StartInterval</code> over <code>StartCalendarInterval</code> when the exact time does not matter.</p>
+<h2>Which to use</h2>
+<p><strong>Use launchd <code>StartCalendarInterval</code> when late is fine.</strong> Updaters, syncs, backups that only need to happen daily, index rebuilds, cleanup. The catch-up is free and correct, and you should not put a scheduled wake in front of it — waking a laptop at 03:00 for a job that would have run perfectly well at 08:15 is a pure waste of battery.</p>
+<p><strong>Use cron when you like cron.</strong> The syntax is more compact, it is portable, and for a machine that is awake it is fine. Just know that on a laptop each expression is also a silent-failure surface.</p>
+<p><strong>Neither solves "must run at 03:00".</strong> A report someone expects at 08:00, a backup that has to finish before you leave, anything with a downstream consumer — launchd's catch-up gives you the job at 08:15 when you open the lid, which for these is the same as not running. That needs a <a href="../wake-mac-for-scheduled-job-pmset/">scheduled wake</a>.</p>
+<h2>The practical consequence for tooling</h2>
+<p>Any tool that wakes a Mac for scheduled jobs has to know this distinction, or it does real harm. Waking at 03:00 for a <code>StartCalendarInterval</code> job that would have self-healed on wake costs battery to achieve nothing.</p>
+<p>goguma marks those jobs <strong>self-healing</strong> and leaves them alone: it adopts them so you can see them, reports them as needing no wake, and arms nothing. The jobs it does wake for are the ones that genuinely lose a run — crontab entries, and schedulers that run inside their own process rather than through the OS.</p>
+<p>If you are auditing this by hand, the rule is: for each job, ask whether a run eight hours late is a run or a miss. That answer, not the schedule syntax, decides whether sleep is a problem.</p>
+<h2>Finding out what you actually have</h2>
+<p>Most machines have both, plus a few things that are neither. <code>crontab -l</code> shows one. <code>launchctl list</code> shows another. Application-level schedulers — anything that keeps its own job store and runs it from its own process — show up in neither, which is <a href="../find-missed-scheduled-jobs-mac/">how jobs go missing without anyone noticing</a>.</p>
+<h2>Common questions</h2><h3>Does launchd run missed jobs after the Mac wakes?</h3><p>Yes, for StartCalendarInterval jobs. If the fire time passed while the machine was asleep, launchd runs the job once on wake. It does not run it once per missed occurrence, and it does not apply if the Mac was powered off.</p><h3>Does cron run missed jobs after wake?</h3><p>No. cron matches the current minute against its schedule. Minutes that pass while asleep are never evaluated, so the occurrence is skipped with no error and no log entry.</p><h3>Should I move my cron jobs to launchd?</h3><p>If running hours late is acceptable — an updater, a sync, an index rebuild — yes, it removes the problem entirely. If the job has to run at a specific time, launchd's catch-up does not help and you need a scheduled wake instead.</p><h3>What about StartInterval instead of StartCalendarInterval?</h3><p>StartInterval counts elapsed time rather than wall clock, and sleep does not count toward it. A job set to every 3600 seconds does not fire repeatedly to catch up after an eight-hour sleep; it fires once and the interval restarts.</p><h3>Does this apply to Homebrew services?</h3><p>Yes. <code>brew services</code> writes LaunchAgents, so a Homebrew-managed service using StartCalendarInterval gets launchd's catch-up behaviour.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>

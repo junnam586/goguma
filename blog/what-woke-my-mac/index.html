@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to find out what woke your Mac</title>
+<meta name="description" content="Your Mac keeps a log of every sleep and wake, with a reason for each. Here is how to read pmset -g log, what the wake reasons mean, and how to tell a real wake from a maintenance dark wake.">
+<link rel="icon" href="../../assets/potato.png">
+<meta property="og:title" content="How to find out what woke your Mac">
+<meta property="og:description" content="Your Mac keeps a log of every sleep and wake, with a reason for each. Here is how to read pmset -g log, what the wake reasons mean, and how to tell a real wake from a maintenance dark wake.">
+<meta property="og:image" content="https://getgoguma.com/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://getgoguma.com/blog/what-woke-my-mac/">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="goguma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How to find out what woke your Mac">
+<meta name="twitter:image" content="https://getgoguma.com/assets/og.png">
+<link rel="alternate" type="application/atom+xml" title="goguma · writing" href="../../feed.xml">
+<link rel="canonical" href="https://getgoguma.com/blog/what-woke-my-mac/">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "TechArticle",
+ "headline": "How to find out what woke your Mac",
+ "description": "Your Mac keeps a log of every sleep and wake, with a reason for each. Here is how to read pmset -g log, what the wake reasons mean, and how to tell a real wake from a maintenance dark wake.",
+ "datePublished": "2026-08-28",
+ "dateModified": "2026-08-28",
+ "author": {
+  "@type": "Person",
+  "name": "Jun Nam"
+ },
+ "publisher": {
+  "@type": "Organization",
+  "name": "goguma",
+  "url": "https://getgoguma.com/"
+ },
+ "mainEntityOfPage": {
+  "@type": "WebPage",
+  "@id": "https://getgoguma.com/blog/what-woke-my-mac/"
+ },
+ "image": "https://getgoguma.com/assets/og.png",
+ "about": {
+  "@type": "SoftwareApplication",
+  "name": "goguma",
+  "operatingSystem": "macOS 14.0 or later",
+  "applicationCategory": "UtilitiesApplication"
+ }
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BreadcrumbList",
+ "itemListElement": [
+  {
+   "@type": "ListItem",
+   "position": 1,
+   "name": "goguma",
+   "item": "https://getgoguma.com/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 2,
+   "name": "Writing",
+   "item": "https://getgoguma.com/blog/"
+  },
+  {
+   "@type": "ListItem",
+   "position": 3,
+   "name": "How to find out what woke your Mac",
+   "item": "https://getgoguma.com/blog/what-woke-my-mac/"
+  }
+ ]
+}
+</script>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Why does my Mac wake up at night by itself?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Usually one of three things \u2014 a scheduled wake something armed (visible in `pmset -g sched`), Wake for network access responding to traffic (the `womp` setting), or a maintenance dark wake, which is normal, brief, and does not turn on the screen."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "What is a DarkWake in the pmset log?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "A wake in which the system comes up to do background housekeeping without turning on the display. macOS punctuates a long sleep with these; they typically last seconds. A line reading \"DarkWake to FullWake\" means a dark wake was promoted to a real one, usually because you touched the machine."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How do I see scheduled wakes on my Mac?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "`pmset -g sched` lists every pending scheduled power event with the time it will fire and the name of what scheduled it."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "How far back does the pmset log go?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Days, typically \u2014 it is capped by size rather than by time, so a busy machine keeps less history than a quiet one."
+   }
+  }
+ ]
+}
+</script>
+<style>
+:root{
+  --ground:#EFE4F0; --ink:#241A2C; --ink-2:#6B6072;
+  --card:#FFFFFF; --rule:#E3D1E6;
+  --accent:#93507F; --ember:#B4531A;
+  --max:720px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column}
+img{max-width:100%;display:block}
+.wrap{width:100%;max-width:var(--max);margin:0 auto;padding-left:24px;padding-right:24px}
+.page{flex:1}
+h1,h2,h3{margin:0;letter-spacing:-.035em;line-height:1.06;font-weight:600}
+h1{font-size:clamp(32px,4.6vw,46px)}
+h2{font-size:clamp(21px,2.3vw,26px);letter-spacing:-.03em;margin:clamp(40px,5vh,54px) 0 0}
+h3{font-size:clamp(17px,1.8vw,19px);letter-spacing:-.022em;margin:30px 0 0}
+p{margin:15px 0 0;font-size:16.5px;line-height:1.65;color:var(--ink-2)}
+p strong,li strong{color:var(--ink);font-weight:600}
+ul,ol{margin:15px 0 0;padding-left:22px}
+li{font-size:16.5px;line-height:1.65;color:var(--ink-2);margin:8px 0 0}
+a{color:var(--accent)}
+a:hover{color:#653A69}
+code{overflow-wrap:anywhere;font-family:var(--mono);font-size:.9em;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  padding:1px 6px;border-radius:5px;color:var(--ink)}
+pre{margin:18px 0 0;padding:18px 20px;overflow-x:auto;border-radius:12px;
+  background:#211630;color:#EFE4F0;font-family:var(--mono);font-size:14px;line-height:1.6}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+/* Tables: hairline rules only, and they scroll rather than push the page wide. */
+.tw{overflow-x:auto;margin:20px 0 0}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--rule);
+  color:var(--ink-2);line-height:1.5;vertical-align:top}
+th{color:var(--ink);font-weight:600;font-size:13.5px;letter-spacing:.01em}
+td strong{color:var(--ink)}
+blockquote{margin:20px 0 0;padding:0 0 0 20px;border-left:1px solid var(--rule)}
+blockquote p{margin:0;color:var(--ink);font-size:17px}
+blockquote p + p{margin-top:10px}
+.top{max-width:none;padding:14px 28px 0}
+.home{display:inline-flex;align-items:center;gap:9px;font-size:23px;font-weight:600;
+  letter-spacing:-.022em;color:var(--ink);text-decoration:none;transition:opacity .18s}
+.home img{width:23px;height:23px}
+.home:hover{opacity:.7}
+.head{padding-top:clamp(30px,6vh,64px)}
+.crumbs{margin:0 0 14px;font-size:13.5px;color:rgba(36,26,44,.66)}
+.crumbs a{color:rgba(36,26,44,.66);text-decoration:none}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs span{margin:0 6px}
+.stamp{margin:16px 0 0;font-family:var(--mono);font-size:12.5px;
+  color:rgba(36,26,44,.66);letter-spacing:.01em}
+/* The answer, before the article. Someone who came from a search result wants
+   it in the first screen, not after a preamble. */
+.answer{margin:clamp(24px,4vh,34px) 0 0;padding-bottom:clamp(24px,4vh,34px);
+  border-bottom:1px solid var(--rule)}
+.answer p{margin:0;color:var(--ink);font-size:clamp(17px,1.9vw,19.5px);
+  line-height:1.52;letter-spacing:-.012em}
+.answer p + p{margin-top:11px}
+.body{padding-bottom:clamp(30px,6vh,60px)}
+/* The one place goguma is pitched, at the foot, after the answer is given. */
+.cta{margin:clamp(44px,6vh,64px) 0 0;padding-top:clamp(26px,4vh,36px);
+  border-top:1px solid var(--rule)}
+.cta p{margin:0;font-size:16px}
+.cta .b{display:inline-flex;align-items:center;gap:8px;margin-top:16px;height:46px;
+  padding:0 20px;border-radius:12px;background:#211630;color:#fff;font-size:15px;
+  font-weight:500;text-decoration:none;transition:background .18s}
+.cta .b:hover{background:#160E22;color:#fff}
+.more{margin:clamp(34px,5vh,48px) 0 0;padding-top:26px;border-top:1px solid var(--rule)}
+.more h2{margin:0 0 4px;font-size:15px;letter-spacing:.01em}
+.more a{display:block;margin-top:9px;font-size:15.5px;text-decoration:none}
+.more a:hover{text-decoration:underline}
+.idx a{display:block;margin-top:26px;text-decoration:none;color:var(--ink)}
+.idx a:hover .t{color:var(--accent)}
+.idx .t{font-size:20px;font-weight:600;letter-spacing:-.028em;line-height:1.2}
+.idx .d{margin-top:6px;font-size:15.5px;line-height:1.55;color:var(--ink-2)}
+footer{padding:clamp(20px,4vh,52px) 0 22px;text-align:center;font-size:13px;
+  color:rgba(36,26,44,.66)}
+footer a{color:rgba(36,26,44,.64)}
+.foot-links{margin:0;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.foot-links a{text-decoration:none;border-bottom:1px solid rgba(36,26,44,.18);padding-bottom:1px}
+.foot-fine{margin:9px 0 0;font-size:12px;color:rgba(36,26,44,.66)}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="wrap top">
+    <a class="home" href="../../"><img src="../../assets/potato.webp" alt="" width="253" height="249">goguma</a>
+  </div>
+  <div class="wrap head">
+    <h1>How to find out what woke your Mac</h1>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="../../">goguma</a> <span aria-hidden="true">›</span>
+      <a href="../">Writing</a>
+    </nav>
+    <p class="stamp">2026-08-28</p>
+    <div class="answer"><p>Run <code>pmset -g log | grep -E "Wake from|DarkWake"</code> to see every wake with a timestamp and a cause. The token after "due to" names the reason — <code>lid</code> is the lid opening, <code>trackpadkeyboard</code> is input, <code>rtc</code> is a scheduled wake somebody armed, <code>wifibt</code> is the network card. Lines that say DarkWake rather than Wake are short maintenance wakes where the screen never turns on; they are normal and typically last a few seconds.</p></div>
+  </div>
+  <div class="wrap body">
+<h2>The log that already has the answer</h2>
+<p>macOS records every transition in and out of sleep, with a timestamp and a cause. Nothing needs to be installed or enabled first:</p>
+<pre><code>pmset -g log | grep -E &quot;Wake from|DarkWake&quot;</code></pre>
+<p>Real lines from a real machine, trimmed for width:</p>
+<pre><code>16:27:28  DarkWake from Deep Idle : due to smc.sysState.Wake wifibt
+16:37:34  Wake from Deep Idle     : due to smc.sysState.Wake lid
+17:55:38  DarkWake to FullWake    : due to UserActivity Assertion
+20:53:08  Wake from Hibernate     : due to trackpadkeyboard/UserActivity</code></pre>
+<p>Each line answers the question directly: when, from how deep a sleep, and why.</p>
+<h2>Reading the reasons</h2>
+<p>The token after <code>due to</code> is the cause. The common ones:</p>
+<div class="tw"><table><thead><tr><th>Token</th><th>What it means</th></tr></thead><tbody><tr><td><code>lid</code></td><td>The lid was opened</td></tr><tr><td><code>trackpadkeyboard</code></td><td>Keyboard or trackpad input</td></tr><tr><td><code>UserActivity</code></td><td>An assertion declared a user present — usually you touching it</td></tr><tr><td><code>rtc</code></td><td>The real-time clock fired — <strong>a scheduled wake something armed</strong></td></tr><tr><td><code>wifibt</code></td><td>The wireless hardware — network traffic, or a nearby device</td></tr><tr><td><code>EC.ACAttach</code> / power tokens</td><td>The charger was plugged in</td></tr></tbody></table></div>
+<p>Two of these deserve a closer look, because they are the ones that wake machines nobody is touching.</p>
+<p><strong><code>rtc</code> is a scheduled wake.</strong> Something asked the machine to wake at that exact time. The pending ones are listed, with names attached:</p>
+<pre><code>$ pmset -g sched
+Scheduled power events:
+ [0]  wake at 08/28/2026 21:22:55 by &#x27;goguma&#x27;
+ [1]  wake at 08/29/2026 00:00:00 by &#x27;com.apple...donotdisturb...timer&#x27;</code></pre>
+<p>The owner string tells you who to go and ask. Anything from <code>pmset schedule</code> shows here, including <a href="../wake-mac-for-scheduled-job-pmset/">wakes armed for scheduled jobs</a>, alongside Apple's own timers.</p>
+<p><strong><code>wifibt</code> with Wake for network access.</strong> If the <code>womp</code> setting is on (it is by default on AC — "Wake for network access" in System Settings), the machine comes up briefly to answer network traffic. These are almost always dark wakes.</p>
+<h2>Wake versus DarkWake — the distinction that explains most mysteries</h2>
+<p>A line that starts <code>Wake</code> is the real thing: the machine came up fully. A line that starts <code>DarkWake</code> is housekeeping — the system runs briefly with the display off, then goes back to sleep. macOS punctuates a long sleep with these, and they typically last a few seconds each.</p>
+<p>If you are investigating "my Mac wakes up at night", sort the lines first: a string of DarkWakes is a machine behaving normally, not a problem to fix. A full <code>Wake</code> at 03:12 with <code>rtc</code> as the reason is a scheduled wake, and <code>pmset -g sched</code> will tell you whose. What dark wakes are for, and why your jobs do not run during them, is its own subject — <a href="../dark-wake-power-nap/">covered here</a>.</p>
+<h2>Turning the question around</h2>
+<p>The same log answers the opposite question, which is usually the one that matters more: not "what woke it" but "what did it sleep through". Every interval between a <code>Sleep</code> line and the next <code>Wake</code> line is time your scheduled jobs did not exist for — and <a href="../cron-jobs-dont-run-mac-asleep/">cron does not tell you what it missed</a>. Replaying each job's schedule against these intervals is how you <a href="../find-missed-scheduled-jobs-mac/">find the runs that silently never happened</a>; it is also the first thing goguma does when installed, using exactly this log.</p>
+<h2>Common questions</h2><h3>Why does my Mac wake up at night by itself?</h3><p>Usually one of three things — a scheduled wake something armed (visible in <code>pmset -g sched</code>), Wake for network access responding to traffic (the <code>womp</code> setting), or a maintenance dark wake, which is normal, brief, and does not turn on the screen.</p><h3>What is a DarkWake in the pmset log?</h3><p>A wake in which the system comes up to do background housekeeping without turning on the display. macOS punctuates a long sleep with these; they typically last seconds. A line reading "DarkWake to FullWake" means a dark wake was promoted to a real one, usually because you touched the machine.</p><h3>How do I see scheduled wakes on my Mac?</h3><p><code>pmset -g sched</code> lists every pending scheduled power event with the time it will fire and the name of what scheduled it.</p><h3>How far back does the pmset log go?</h3><p>Days, typically — it is capped by size rather than by time, so a busy machine keeps less history than a quiet one.</p>
+    <div class="cta">
+      <p><strong>goguma</strong> does this for you: it reads the scheduled jobs
+        already on your Mac, wakes the machine shortly before each one is due,
+        holds sleep off while it runs, and lets it sleep again afterwards. Free
+        and open source, macOS 14+.</p>
+      <a class="b" href="../../">Get goguma →</a>
+    </div>
+<div class="more"><h2>Related</h2><a href="../cron-jobs-dont-run-mac-asleep/">Why your Mac&#x27;s cron jobs don&#x27;t run while it&#x27;s asleep</a><a href="../wake-mac-for-scheduled-job-pmset/">How to wake a Mac for a scheduled job with pmset</a><a href="../find-missed-scheduled-jobs-mac/">How to find which of your scheduled jobs your Mac has been missing</a></div>
+  </div>
+</div>
+<footer>
+  <p class="foot-links">
+    <a href="../../">goguma</a> ·
+    <a href="../">Writing</a> ·
+    <a href="https://github.com/junnam586/goguma">Source</a> ·
+    <a href="https://github.com/junnam586/goguma/blob/main/SECURITY.md">Security</a> ·
+    <a href="../../privacy/">Privacy</a> ·
+    <a href="../../terms/">Terms</a>
+  </p>
+  <p class="foot-fine">goguma is free and open source, under the MIT licence.</p>
+</footer>
+</body>
+</html>
